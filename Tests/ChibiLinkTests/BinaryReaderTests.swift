@@ -36,8 +36,8 @@ class NopDelegate: BinaryReaderDelegate {
         self.state = state
     }
 
-    func beginSection(_: BinarySection, size _: UInt32) {}
-    func beginNamesSection(_: UInt32) {}
+    func beginSection(_: BinarySection, size _: Size) {}
+    func beginNamesSection(_: Size) {}
     func onFunctionName(_: Int, _: String) {}
     func onFunctionCount(_: Int) {}
     func onImportFunc(_: Int, _: String, _: String, _: Int, _: Int) {}
@@ -51,7 +51,7 @@ class NopDelegate: BinaryReaderDelegate {
     func beginDataSegment(_: Int, _: Int) {}
     func onDataSegmentData(_: Int, _: ArraySlice<UInt8>, _: Int) {}
     func onRelocCount(_: Int, _: Int) {}
-    func onReloc(_: RelocType, _: UInt32, _: UInt32, _: UInt32) {}
+    func onReloc(_: RelocType, _: Offset, _: Index, _: UInt32) {}
 }
 
 func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {
@@ -163,7 +163,7 @@ class BinaryReaderTests: XCTestCase {
         class RelocDelegate: NopDelegate {
             var sections: [BinarySection] = []
             var expectedSections: [BinarySection] = [.elem, .code]
-            override func beginSection(_ section: BinarySection, size _: UInt32) {
+            override func beginSection(_ section: BinarySection, size _: Size) {
                 sections.append(section)
             }
 

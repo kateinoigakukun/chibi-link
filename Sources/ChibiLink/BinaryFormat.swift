@@ -1,6 +1,10 @@
 let magic: [UInt8] = [0x00, 0x61, 0x73, 0x6D]
 let version: [UInt8] = [0x01, 0x00, 0x00, 0x00]
 
+typealias Index = Int
+typealias Offset = Int
+typealias Size = Int
+
 enum BinarySection: UInt8 {
     case custom = 0
     case type = 1
@@ -39,14 +43,6 @@ enum ElementType: UInt8, Equatable {
     case funcRef = 0x70
 }
 
-let LIMITS_HAS_MAX_FLAG: UInt8 = 0x1
-let LIMITS_IS_SHARED_FLAG: UInt8 = 0x2
-struct Limits {
-    var initial: UInt32
-    var max: UInt32?
-    var isShared: Bool = false
-}
-
 enum ConstOpcode: UInt8 {
     case i32Const = 0x41
     case i64Const = 0x42
@@ -67,4 +63,12 @@ enum RelocType: UInt8 {
     case memoryAddressI32 = 5
     case typeIndexLEB = 6
     case globalIndexLEB = 7
+}
+
+let LIMITS_HAS_MAX_FLAG: UInt8 = 0x1
+let LIMITS_IS_SHARED_FLAG: UInt8 = 0x2
+struct Limits {
+    var initial: Size
+    var max: Size?
+    var isShared: Bool
 }

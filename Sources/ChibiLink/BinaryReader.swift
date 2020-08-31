@@ -1,46 +1,46 @@
 protocol BinaryReaderDelegate {
     func setState(_ state: BinaryReader.State)
-    func beginSection(_ section: BinarySection, size: UInt32)
+    func beginSection(_ section: BinarySection, size: Size)
     func onImportFunc(
-        _ importIndex: Int,
+        _ importIndex: Index,
         _ module: String, _ field: String,
-        _ funcIndex: Int,
-        _ signatureIndex: Int
+        _ funcIndex: Index,
+        _ signatureIndex: Index
     )
 
     func onImportMemory(
-        _ importIndex: Int,
+        _ importIndex: Index,
         _ module: String, _ field: String,
-        _ memoryIndex: Int, _ pageLimits: Limits
+        _ memoryIndex: Index, _ pageLimits: Limits
     )
 
     func onImportGlobal(
-        _ importIndex: Int,
+        _ importIndex: Index,
         _ module: String, _ field: String,
-        _ globalIndex: Int,
+        _ globalIndex: Index,
         _ type: ValueType, _ mutable: Bool
     )
 
     func onFunctionCount(_ count: Int)
 
-    func onTable(_ tableIndex: Int, _ type: ElementType, _ limits: Limits)
-    func onMemory(_ memoryIndex: Int, _ pageLimits: Limits)
-    func onExport(_ exportIndex: Int, _ kind: ExternalKind,
-                  _ itemIndex: Int, _ name: String)
-    func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int)
+    func onTable(_ tableIndex: Index, _ type: ElementType, _ limits: Limits)
+    func onMemory(_ memoryIndex: Index, _ pageLimits: Limits)
+    func onExport(_ exportIndex: Index, _ kind: ExternalKind,
+                  _ itemIndex: Index, _ name: String)
+    func onElementSegmentFunctionIndexCount(_ segmentIndex: Index, _ indexCount: Int)
 
-    func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int)
-    func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int)
+    func beginDataSegment(_ segmentIndex: Index, _ memoryIndex: Index)
+    func onDataSegmentData(_ segmentIndex: Index, _ data: ArraySlice<UInt8>, _ size: Size)
 
-    func beginNamesSection(_ size: UInt32)
-    func onFunctionName(_ index: Int, _ name: String)
+    func beginNamesSection(_ size: Size)
+    func onFunctionName(_ index: Index, _ name: String)
 
-    func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int)
+    func onRelocCount(_ relocsCount: Int, _ sectionIndex: Index)
 
-    func onReloc(_ type: RelocType, _ offset: UInt32,
-                 _ index: UInt32, _ addend: UInt32)
+    func onReloc(_ type: RelocType, _ offset: Offset,
+                 _ index: Index, _ addend: UInt32)
 
-    func onInitExprI32ConstExpr(_ segmentIndex: Int, _ value: UInt32)
+    func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
 }
 
 class BinaryReader {
@@ -56,7 +56,7 @@ class BinaryReader {
     }
 
     class State {
-        fileprivate(set) var offset: Int = 0
+        fileprivate(set) var offset: Offset = 0
         let bytes: [UInt8]
 
         init(bytes: [UInt8]) {
@@ -124,23 +124,26 @@ class BinaryReader {
         return name
     }
 
+    func readIndex() -> Index { Index(readU32Leb128()) }
+    func readOffset() -> Offset { Offset(readU32Leb128()) }
+
     func readTable() throws -> (type: ElementType, limits: Limits) {
         let rawType = readU8Fixed()
         guard let elementType = ElementType(rawValue: rawType) else {
             throw Error.invalidElementType(rawType)
         }
         let hasMax = readU8Fixed() != 0
-        let initial = readU32Leb128()
-        let max = hasMax ? readU32Leb128() : nil
-        return (elementType, Limits(initial: initial, max: max))
+        let initial = Size(readU32Leb128())
+        let max = hasMax ? Size(readU32Leb128()) : nil
+        return (elementType, Limits(initial: initial, max: max, isShared: false))
     }
 
     func readMemory() throws -> Limits {
         let flags = readU8Fixed()
         let hasMax = (flags & LIMITS_HAS_MAX_FLAG) != 0
         let isShared = (flags & LIMITS_IS_SHARED_FLAG) != 0
-        let initial = readU32Leb128()
-        let max = hasMax ? readU32Leb128() : nil
+        let initial = Size(readU32Leb128())
+        let max = hasMax ? Size(readU32Leb128()) : nil
         return Limits(initial: initial, max: max, isShared: isShared)
     }
 
@@ -158,7 +161,7 @@ class BinaryReader {
         return type
     }
 
-    func readI32InitExpr(segmentIndex: Int) throws {
+    func readI32InitExpr(segmentIndex: Index) throws {
         let code = readU8Fixed()
         guard let constOp = ConstOpcode(rawValue: code) else {
             throw Error.expectConstOpcode(code)
@@ -178,8 +181,8 @@ class BinaryReader {
         }
     }
 
-    func readBytes() -> (data: ArraySlice<UInt8>, size: Int) {
-        let size = Int(readU32Leb128())
+    func readBytes() -> (data: ArraySlice<UInt8>, size: Size) {
+        let size = Size(readU32Leb128())
         let data = state.bytes[state.offset ..< state.offset + size]
         state.offset += size
         return (data, size)
@@ -199,11 +202,11 @@ class BinaryReader {
         var isEOF: Bool { state.offset >= length }
         while !isEOF {
             let sectionCode = readU8Fixed()
-            let size = readU32Leb128()
+            let size = Size(readU32Leb128())
             guard let section = BinarySection(rawValue: sectionCode) else {
                 throw Error.invalidSectionCode(sectionCode)
             }
-            sectionEnd = state.offset + Int(size)
+            sectionEnd = state.offset + size
             delegate.beginSection(section, size: size)
 
             switch section {
@@ -229,12 +232,13 @@ class BinaryReader {
         }
     }
 
-    func readFunctionSection(sectionSize _: UInt32) throws {
+    func readFunctionSection(sectionSize _: Size) throws {
         let functionCount = Int(readU32Leb128())
         delegate.onFunctionCount(functionCount)
+        // skip contents
     }
 
-    func readImportSection(sectionSize _: UInt32) throws {
+    func readImportSection(sectionSize _: Size) throws {
         let importCount = Int(readU32Leb128())
         for importIdx in 0 ..< importCount {
             let module = readString()
@@ -243,7 +247,7 @@ class BinaryReader {
             let kind = ExternalKind(rawValue: rawKind)
             switch kind {
             case .func:
-                let signagureIdx = Int(readU32Leb128())
+                let signagureIdx = readIndex()
                 delegate.onImportFunc(
                     importIdx,
                     module, field,
@@ -283,27 +287,27 @@ class BinaryReader {
         }
     }
 
-    func readTableSection(sectionSize _: UInt32) throws {
+    func readTableSection(sectionSize _: Size) throws {
         let tablesCount = Int(readU32Leb128())
         assert(tablesCount <= 1)
         for i in 0 ..< tablesCount {
-            let tableIdx = tableImportCount + i
+            let tableIdx: Index = tableImportCount + i
             let (elemTy, limits) = try readTable()
             delegate.onTable(tableIdx, elemTy, limits)
         }
     }
 
-    func readMemorySection(sectionSize _: UInt32) throws {
+    func readMemorySection(sectionSize _: Size) throws {
         let memoriesCount = Int(readU32Leb128())
         assert(memoriesCount <= 1)
         for i in 0 ..< memoriesCount {
-            let memoryIdx = memoryImportCount + i
+            let memoryIdx: Index = memoryImportCount + i
             let limits = try readMemory()
             delegate.onMemory(memoryIdx, limits)
         }
     }
 
-    func readExportSection(sectionSize _: UInt32) throws {
+    func readExportSection(sectionSize _: Size) throws {
         let exportsCount = Int(readU32Leb128())
         for i in 0 ..< exportsCount {
             let name = readString()
@@ -311,30 +315,30 @@ class BinaryReader {
             guard let kind = ExternalKind(rawValue: rawKind) else {
                 throw Error.invalidValueType(rawKind)
             }
-            let itemIndex = Int(readU32Leb128())
+            let itemIndex = readIndex()
             delegate.onExport(i, kind, itemIndex, name)
         }
     }
 
-    func readElementSection(sectionSize _: UInt32) throws {
+    func readElementSection(sectionSize _: Size) throws {
         let segmentsCount = Int(readU32Leb128())
         for i in 0 ..< segmentsCount {
-            _ = readU32Leb128() // tableIndex
+            _ = readIndex() // tableIndex
             try readI32InitExpr(segmentIndex: i)
             let funcIndicesCount = Int(readU32Leb128())
             delegate.onElementSegmentFunctionIndexCount(i, funcIndicesCount)
             for _ in 0 ..< funcIndicesCount {
-                _ = Int(readU32Leb128()) // funcIdx
+                _ = readIndex() // funcIdx
             }
         }
     }
 
-    func readDataSection(sectionSize _: UInt32) throws {
+    func readDataSection(sectionSize _: Size) throws {
         // BeginDataSection
         let segmentsCount = Int(readU32Leb128())
         // OnDataSegmentCount
         for i in 0 ..< segmentsCount {
-            let memoryIndex = Int(readU32Leb128())
+            let memoryIndex = readIndex()
             delegate.beginDataSegment(i, memoryIndex)
             // BeginDataSegmentInitExpr
             try readI32InitExpr(segmentIndex: i)
@@ -346,7 +350,7 @@ class BinaryReader {
         // EndDataSection
     }
 
-    func readCustomSection(sectionSize: UInt32) throws {
+    func readCustomSection(sectionSize: Size) throws {
         let sectionName = readString()
         // BeginCustomSection
         switch sectionName {
@@ -359,12 +363,12 @@ class BinaryReader {
         }
     }
 
-    func readNameSection(sectionSize: UInt32) throws {
+    func readNameSection(sectionSize: Size) throws {
         delegate.beginNamesSection(sectionSize)
 
         while state.offset < sectionEnd {
             let subsectionType = readU8Fixed()
-            let subsectionSize = Int(readU32Leb128())
+            let subsectionSize = Size(readU32Leb128())
             let subsectionEnd = state.offset + subsectionSize
 
             switch NameSectionSubsection(rawValue: subsectionType) {
@@ -372,7 +376,7 @@ class BinaryReader {
                 // OnFunctionNameSubsection
                 let namesCount = readU32Leb128()
                 for _ in 0 ..< namesCount {
-                    let funcIdx = Int(readU32Leb128())
+                    let funcIdx = readIndex()
                     let funcName = readString()
                     delegate.onFunctionName(funcIdx, funcName)
                 }
@@ -383,8 +387,8 @@ class BinaryReader {
         }
     }
 
-    func readRelocSection(sectionSize _: UInt32) throws {
-        let sectionIndex = Int(readU32Leb128())
+    func readRelocSection(sectionSize _: Size) throws {
+        let sectionIndex = readIndex()
         let relocsCount = Int(readU32Leb128())
         delegate.onRelocCount(relocsCount, sectionIndex)
 
@@ -393,8 +397,8 @@ class BinaryReader {
             guard let type = RelocType(rawValue: rawType) else {
                 throw Error.invalidRelocType(rawType)
             }
-            let offset = readU32Leb128()
-            let index = readU32Leb128()
+            let offset = readOffset()
+            let index = readIndex()
             let addend: UInt32
             switch type {
             case .memoryAddressLEB,
