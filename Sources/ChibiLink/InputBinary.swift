@@ -51,14 +51,14 @@ class FunctionImport {
     let module: String
     let field: String
     let signatureIdx: Int
-    var active: Bool
+    var unresolved: Bool
     var relocatedFunctionIndex: Index?
 
-    init(module: String, field: String, signatureIdx: Int, active: Bool) {
+    init(module: String, field: String, signatureIdx: Int, unresolved: Bool) {
         self.module = module
         self.field = field
         self.signatureIdx = signatureIdx
-        self.active = active
+        self.unresolved = unresolved
     }
 }
 
@@ -170,7 +170,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         let funcImport = FunctionImport(
             module: module, field: field,
             signatureIdx: signatureIndex,
-            active: true
+            unresolved: true
         )
         binary.funcImports.append(funcImport)
         binary.unresolvedFunctionImportsCount += 1

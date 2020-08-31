@@ -54,7 +54,7 @@ enum Opcode: UInt8 {
     case end = 0x0B
 }
 
-enum RelocType: UInt8 {
+enum RelocType: UInt8, Equatable {
     case funcIndexLEB = 0
     case tableIndexSLEB = 1
     case tableIndexI32 = 2
