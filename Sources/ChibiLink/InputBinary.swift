@@ -3,7 +3,7 @@ class DataSegment {
     var offset: Int!
     var data: ArraySlice<UInt8>!
     var size: Int!
-    
+
     internal init(memoryIndex: Int) {
         self.memoryIndex = memoryIndex
     }
@@ -24,18 +24,19 @@ class Section {
     var payloadOffset: Int?
     var payloadSize: Int?
     let count: Int?
-    
+
     var memoryInitialSize: Int?
-    
+
     var relocations: [Relocation] = []
-    
+
     var dataSegments: [DataSegment] = []
 
     weak var binary: InputBinary?
-    
+
     init(sectionCode: BinarySection, size: UInt32, offset: Int,
-         payloadOffset: Int?, payloadSize: Int?, count: Int?,
-         binary: InputBinary) {
+         payloadOffset _: Int?, payloadSize _: Int?, count: Int?,
+         binary: InputBinary)
+    {
         self.sectionCode = sectionCode
         self.size = size
         self.offset = offset
@@ -49,7 +50,7 @@ class FunctionImport {
     let field: String
     let signatureIdx: Int
     var active: Bool
-    
+
     init(module: String, field: String, signatureIdx: Int, active: Bool) {
         self.module = module
         self.field = field
@@ -65,7 +66,7 @@ class GlobalImport {
         self.type = type
         self.mutable = mutable
     }
-    
+
     let module: String
     let field: String
     let type: ValueType
@@ -76,7 +77,7 @@ class Export {
     let kind: ExternalKind
     let name: String
     let index: Int
-    
+
     init(kind: ExternalKind, name: String, index: Int) {
         self.kind = kind
         self.name = name
@@ -91,12 +92,12 @@ class InputBinary {
     fileprivate(set) var sections: [Section] = []
     fileprivate(set) var funcImports: [FunctionImport] = []
     fileprivate(set) var globalImports: [GlobalImport] = []
-    
+
     fileprivate(set) var exports: [Export] = []
-    
+
     fileprivate(set) var functionCount: Int!
     fileprivate(set) var tableElemCount: Int!
-    
+
     fileprivate(set) var debugNames: [String] = []
 
     init(filename: String, data: [UInt8]) {
@@ -110,7 +111,6 @@ func hasCount(_ section: BinarySection) -> Bool {
 }
 
 class LinkInfoCollector: BinaryReaderDelegate {
-    
     var state: BinaryReader.State!
     var currentSection: Section!
     var currentRelocSection: Section!
@@ -122,7 +122,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
     func setState(_ state: BinaryReader.State) {
         self.state = state
     }
-    
+
     func beginSection(_ sectionCode: BinarySection, size: UInt32) {
         var count: UInt32?
         var startOffset: Int?
@@ -140,8 +140,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.sections.append(section)
         currentSection = section
     }
-    
-    func onImportFunc(_ importIndex: Int, _ module: String, _ field: String, _ funcIndex: Int, _ signatureIndex: Int) {
+
+    func onImportFunc(_: Int, _ module: String, _ field: String, _: Int, _ signatureIndex: Int) {
         let funcImport = FunctionImport(
             module: module, field: field,
             signatureIdx: signatureIndex,
@@ -149,73 +149,73 @@ class LinkInfoCollector: BinaryReaderDelegate {
         )
         binary.funcImports.append(funcImport)
     }
-    
-    func onImportMemory(_ importIndex: Int, _ module: String, _ field: String, _ memoryIndex: Int, _ pageLimits: Limits) {
+
+    func onImportMemory(_: Int, _: String, _: String, _: Int, _: Limits) {
         fatalError("TODO")
     }
-    
-    func onImportGlobal(_ importIndex: Int, _ module: String, _ field: String, _ globalIndex: Int, _ type: ValueType, _ mutable: Bool) {
+
+    func onImportGlobal(_: Int, _ module: String, _ field: String, _: Int, _ type: ValueType, _ mutable: Bool) {
         let globalImport = GlobalImport(module: module, field: field, type: type, mutable: mutable)
         binary.globalImports.append(globalImport)
     }
-    
+
     func onFunctionCount(_ count: Int) {
         binary.functionCount = count
     }
-    
-    func onTable(_ tableIndex: Int, _ type: ElementType, _ limits: Limits) {
+
+    func onTable(_: Int, _: ElementType, _ limits: Limits) {
         binary.tableElemCount = Int(limits.initial)
     }
 
-    func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int) {
+    func onElementSegmentFunctionIndexCount(_: Int, _: Int) {
         let sec = currentSection!
         let delta = state.offset - sec.payloadOffset!
         sec.payloadOffset! += delta
         sec.payloadSize! -= delta
     }
-    
-    func onMemory(_ memoryIndex: Int, _ pageLimits: Limits) {
+
+    func onMemory(_: Int, _ pageLimits: Limits) {
         currentSection.memoryInitialSize = Int(pageLimits.initial)
     }
-    
-    func onExport(_ exportIndex: Int, _ kind: ExternalKind, _ itemIndex: Int, _ name: String) {
+
+    func onExport(_: Int, _ kind: ExternalKind, _ itemIndex: Int, _ name: String) {
         let export = Export(kind: kind, name: name, index: itemIndex)
         binary.exports.append(export)
     }
 
-    func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int) {
+    func beginDataSegment(_: Int, _ memoryIndex: Int) {
         let sec = currentSection!
         let segment = DataSegment(memoryIndex: memoryIndex)
         sec.dataSegments.append(segment)
     }
-    
-    func onInitExprI32ConstExpr(_ segmentIndex: Int, _ value: UInt32) {
+
+    func onInitExprI32ConstExpr(_: Int, _ value: UInt32) {
         let sec = currentSection!
         guard sec.sectionCode == .data else { return }
         let segment = sec.dataSegments.last!
         segment.offset = Int(value)
     }
-    
-    func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int) {
+
+    func onDataSegmentData(_: Int, _ data: ArraySlice<UInt8>, _ size: Int) {
         let sec = currentSection!
         let segment = sec.dataSegments.last!
         segment.data = data
         segment.size = size
     }
-    
-    func beginNamesSection(_ size: UInt32) {
+
+    func beginNamesSection(_: UInt32) {
         let funcSize = binary.functionCount + binary.funcImports.count
         binary.debugNames = Array(repeating: "", count: funcSize)
     }
-    
+
     func onFunctionName(_ index: Int, _ name: String) {
         binary.debugNames[index] = name
     }
-    
-    func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int) {
+
+    func onRelocCount(_: Int, _ sectionIndex: Int) {
         currentRelocSection = binary.sections[sectionIndex]
     }
-    
+
     func onReloc(_ type: RelocType, _ offset: UInt32, _ index: UInt32, _ addend: UInt32) {
         let reloc = Relocation(type: type, offset: offset, index: index, addend: addend)
         currentRelocSection.relocations.append(reloc)

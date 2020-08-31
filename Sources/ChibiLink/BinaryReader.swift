@@ -7,7 +7,7 @@ protocol BinaryReaderDelegate {
         _ funcIndex: Int,
         _ signatureIndex: Int
     )
-    
+
     func onImportMemory(
         _ importIndex: Int,
         _ module: String, _ field: String,
@@ -23,13 +23,12 @@ protocol BinaryReaderDelegate {
 
     func onFunctionCount(_ count: Int)
 
-    
     func onTable(_ tableIndex: Int, _ type: ElementType, _ limits: Limits)
     func onMemory(_ memoryIndex: Int, _ pageLimits: Limits)
     func onExport(_ exportIndex: Int, _ kind: ExternalKind,
                   _ itemIndex: Int, _ name: String)
     func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int)
-    
+
     func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int)
     func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int)
 
@@ -37,12 +36,11 @@ protocol BinaryReaderDelegate {
     func onFunctionName(_ index: Int, _ name: String)
 
     func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int)
-    
+
     func onReloc(_ type: RelocType, _ offset: UInt32,
                  _ index: UInt32, _ addend: UInt32)
 
     func onInitExprI32ConstExpr(_ segmentIndex: Int, _ value: UInt32)
-    
 }
 
 class BinaryReader {
@@ -84,6 +82,7 @@ class BinaryReader {
     }
 
     // MARK: - Reader Utilities
+
     @discardableResult
     func read(_ length: Int) -> ArraySlice<UInt8> {
         let result = state.bytes[state.offset ..< state.offset + length]
@@ -102,7 +101,7 @@ class BinaryReader {
         state.offset += advanced
         return value
     }
-    
+
     func readS32Leb128() -> UInt32 {
         let (value, advanced) = decodeSLEB128(state.bytes[state.offset...])
         state.offset += advanced
@@ -158,7 +157,7 @@ class BinaryReader {
         }
         return type
     }
-    
+
     func readI32InitExpr(segmentIndex: Int) throws {
         let code = readU8Fixed()
         guard let constOp = ConstOpcode(rawValue: code) else {
@@ -173,19 +172,21 @@ class BinaryReader {
         }
         let endCode = readU8Fixed()
         guard let opcode = Opcode(rawValue: endCode),
-              opcode == .end else {
+            opcode == .end
+        else {
             throw Error.expectEnd
         }
     }
-    
+
     func readBytes() -> (data: ArraySlice<UInt8>, size: Int) {
         let size = Int(readU32Leb128())
-        let data = state.bytes[state.offset..<state.offset + size]
+        let data = state.bytes[state.offset ..< state.offset + size]
         state.offset += size
         return (data, size)
     }
 
     // MARK: - Entry point
+
     func readModule() throws {
         let maybeMagic = read(4)
         assert(maybeMagic.elementsEqual(magic))
@@ -252,7 +253,7 @@ class BinaryReader {
                 funcImportCount += 1
             case .table:
                 _ = try readTable()
-            // onImportTable
+                // onImportTable
                 tableImportCount += 1
             case .memory:
                 let limits = try readMemory()
@@ -281,30 +282,30 @@ class BinaryReader {
             }
         }
     }
-    
-    func readTableSection(sectionSize: UInt32) throws {
+
+    func readTableSection(sectionSize _: UInt32) throws {
         let tablesCount = Int(readU32Leb128())
         assert(tablesCount <= 1)
-        for i in 0..<tablesCount {
+        for i in 0 ..< tablesCount {
             let tableIdx = tableImportCount + i
             let (elemTy, limits) = try readTable()
             delegate.onTable(tableIdx, elemTy, limits)
         }
     }
-    
-    func readMemorySection(sectionSize: UInt32) throws {
+
+    func readMemorySection(sectionSize _: UInt32) throws {
         let memoriesCount = Int(readU32Leb128())
         assert(memoriesCount <= 1)
-        for i in 0..<memoriesCount {
+        for i in 0 ..< memoriesCount {
             let memoryIdx = memoryImportCount + i
             let limits = try readMemory()
             delegate.onMemory(memoryIdx, limits)
         }
     }
-    
-    func readExportSection(sectionSize: UInt32) throws {
+
+    func readExportSection(sectionSize _: UInt32) throws {
         let exportsCount = Int(readU32Leb128())
-        for i in 0..<exportsCount {
+        for i in 0 ..< exportsCount {
             let name = readString()
             let rawKind = readU8Fixed()
             guard let kind = ExternalKind(rawValue: rawKind) else {
@@ -314,25 +315,25 @@ class BinaryReader {
             delegate.onExport(i, kind, itemIndex, name)
         }
     }
-    
-    func readElementSection(sectionSize: UInt32) throws {
+
+    func readElementSection(sectionSize _: UInt32) throws {
         let segmentsCount = Int(readU32Leb128())
-        for i in 0..<segmentsCount {
+        for i in 0 ..< segmentsCount {
             _ = readU32Leb128() // tableIndex
             try readI32InitExpr(segmentIndex: i)
             let funcIndicesCount = Int(readU32Leb128())
             delegate.onElementSegmentFunctionIndexCount(i, funcIndicesCount)
-            for _ in 0..<funcIndicesCount {
+            for _ in 0 ..< funcIndicesCount {
                 _ = Int(readU32Leb128()) // funcIdx
             }
         }
     }
-    
-    func readDataSection(sectionSize: UInt32) throws {
+
+    func readDataSection(sectionSize _: UInt32) throws {
         // BeginDataSection
         let segmentsCount = Int(readU32Leb128())
         // OnDataSegmentCount
-        for i in 0..<segmentsCount {
+        for i in 0 ..< segmentsCount {
             let memoryIndex = Int(readU32Leb128())
             delegate.beginDataSegment(i, memoryIndex)
             // BeginDataSegmentInitExpr
@@ -381,13 +382,13 @@ class BinaryReader {
             }
         }
     }
-    
-    func readRelocSection(sectionSize: UInt32) throws {
+
+    func readRelocSection(sectionSize _: UInt32) throws {
         let sectionIndex = Int(readU32Leb128())
         let relocsCount = Int(readU32Leb128())
         delegate.onRelocCount(relocsCount, sectionIndex)
 
-        for _ in 0..<relocsCount {
+        for _ in 0 ..< relocsCount {
             let rawType = readU8Fixed()
             guard let type = RelocType(rawValue: rawType) else {
                 throw Error.invalidRelocType(rawType)

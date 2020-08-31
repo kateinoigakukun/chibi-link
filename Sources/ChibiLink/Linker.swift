@@ -4,13 +4,10 @@ class Linker {
     func append(_ binary: InputBinary) {
         inputs.append(binary)
     }
-    
-    func calculateRelocOffsets() {
-    }
-    
-    func link() {
-        
-    }
+
+    func calculateRelocOffsets() {}
+
+    func link() {}
 }
 
 func performLinker(_ filenames: [String]) throws {

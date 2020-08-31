@@ -52,11 +52,10 @@ enum ConstOpcode: UInt8 {
     case i64Const = 0x42
     case f32Const = 0x43
     case f64Const = 0x44
-
 }
 
 enum Opcode: UInt8 {
-    case end = 0x0b
+    case end = 0x0B
 }
 
 enum RelocType: UInt8 {
