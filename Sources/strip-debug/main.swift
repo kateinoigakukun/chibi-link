@@ -1,6 +1,10 @@
+import Foundation
+
 protocol BinaryReader {
-    func beginSection(type: UInt8, offset: Int,
-                      contentStart: Int, contentEnd: Int)
+    func beginSection(
+        type: UInt8, offset: Int,
+        contentStart: Int, contentEnd: Int
+    )
 }
 
 func decodeLEB128(_ bytes: ArraySlice<UInt8>) -> (value: UInt32, offset: Int) {
@@ -11,9 +15,9 @@ func decodeLEB128(_ bytes: ArraySlice<UInt8>) -> (value: UInt32, offset: Int) {
     repeat {
         byte = bytes[index]
         index += 1
-        value |= UInt32(byte & 0x7f) << shift
+        value |= UInt32(byte & 0x7F) << shift
         shift += 7
-    } while (byte >= 128)
+    } while byte >= 128
     return (value, index - bytes.startIndex)
 }
 
@@ -24,15 +28,15 @@ class InputStream {
     var isEOF: Bool {
         offset >= length
     }
-    
+
     init(bytes: [UInt8]) {
         self.bytes = bytes
-        self.length = bytes.count
+        length = bytes.count
     }
 
     @discardableResult
     func read(_ length: Int) -> ArraySlice<UInt8> {
-        let result = bytes[offset..<offset+length]
+        let result = bytes[offset ..< offset + length]
         offset += length
         return result
     }
@@ -57,7 +61,7 @@ class InputStream {
     }
 }
 
-let magic: [UInt8] = [0x00, 0x61, 0x73, 0x6d]
+let magic: [UInt8] = [0x00, 0x61, 0x73, 0x6D]
 let version: [UInt8] = [0x01, 0x00, 0x00, 0x00]
 let customSectionId = 0
 
@@ -71,16 +75,18 @@ extension BinaryReader {
             readSection(input)
         }
     }
-    
+
     func readSection(_ input: InputStream) {
         let offset = input.offset
         let type = input.readUInt8()
         let size = Int(input.readVarUInt32())
         let contentStart = input.offset
 
-        beginSection(type: type, offset: offset,
-                     contentStart: contentStart,
-                     contentEnd: contentStart + size)
+        beginSection(
+            type: type, offset: offset,
+            contentStart: contentStart,
+            contentEnd: contentStart + size
+        )
         input.read(size)
     }
 }
@@ -92,18 +98,16 @@ struct DebugStrip: BinaryReader {
     func beginSection(type: UInt8, offset: Int, contentStart: Int, contentEnd: Int) {
         if type == customSectionId {
             let name = customSectionName(contentStart: contentStart, contentEnd: contentEnd)
-            if name.hasPrefix(".debug_") ||
-                name.hasPrefix("reloc..debug_") ||
-                name == "name" { return }
+            if name.hasPrefix(".debug_") || name.hasPrefix("reloc..debug_") || name == "name" { return }
         }
-        let slice = input.bytes[offset..<contentEnd]
+        let slice = input.bytes[offset ..< contentEnd]
         writer(slice)
     }
 
-    func customSectionName(contentStart: Int, contentEnd: Int) -> String {
+    func customSectionName(contentStart: Int, contentEnd _: Int) -> String {
         let (nameLength, advanced) = decodeLEB128(input.bytes[contentStart...])
         let nameOffset = contentStart + advanced
-        let bytes = input.bytes[nameOffset..<nameOffset + Int(nameLength)]
+        let bytes = input.bytes[nameOffset ..< nameOffset + Int(nameLength)]
         let name = String(bytes: bytes, encoding: .utf8)
         return name!
     }
@@ -114,8 +118,6 @@ struct DebugStrip: BinaryReader {
         read(input)
     }
 }
-
-import Foundation
 
 let inputFile = URL(fileURLWithPath: CommandLine.arguments[1])
 let outputFile = URL(fileURLWithPath: CommandLine.arguments[2])
