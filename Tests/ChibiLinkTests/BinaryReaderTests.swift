@@ -1,6 +1,5 @@
-import XCTest
 @testable import ChibiLink
-
+import XCTest
 
 class NopDelegate: BinaryReaderDelegate {
     var state: BinaryReader.State!

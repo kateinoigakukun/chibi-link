@@ -102,8 +102,7 @@ class InputBinary {
     fileprivate(set) var tableElemSize: Size = 0
 
     fileprivate(set) var debugNames: [String] = []
-    
-    
+
     struct RelocOffsets {
         var importedFunctionIndexOffset: Offset
         var importedGlobalindexOffset: Offset
@@ -114,11 +113,12 @@ class InputBinary {
         var functionIndexOffset: Offset?
     }
 
-    var relocOffsets: RelocOffsets? = nil
-    
+    var relocOffsets: RelocOffsets?
+
     var memoryPageCount: Int {
         sections.first(where: { $0.sectionCode == .memory })?.memoryInitialSize ?? 0
     }
+
     var unresolvedFunctionImportsCount: Int = 0
 
     init(filename: String, data: [UInt8]) {

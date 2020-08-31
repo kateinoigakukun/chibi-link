@@ -1,5 +1,5 @@
-import XCTest
 @testable import ChibiLink
+import XCTest
 
 func testLink(_ contents: [String: String]) throws {
     let linker = Linker()
@@ -15,7 +15,6 @@ func testLink(_ contents: [String: String]) throws {
 }
 
 class LinkerTests: XCTestCase {
-
     func testMergeFunction() throws {
         try testLink([
             "lib.wat": """
@@ -31,10 +30,10 @@ class LinkerTests: XCTestCase {
                 (i32.add (i32.const 0) (i32.const 2))
               )
             )
-            """
+            """,
         ])
     }
-    
+
     func testImports() throws {
         try testLink([
             "foo.wat": """
@@ -49,7 +48,7 @@ class LinkerTests: XCTestCase {
             (module
               (import "foo" "bar" (func (result i32)))
             )
-            """
+            """,
         ])
     }
 }

@@ -1,5 +1,5 @@
-import Foundation
 @testable import ChibiLink
+import Foundation
 
 func exec(_ launchPath: String, _ arguments: [String]) {
     let process = Process()

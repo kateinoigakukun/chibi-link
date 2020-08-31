@@ -1,6 +1,5 @@
-import XCTest
 @testable import ChibiLink
-
+import XCTest
 
 func testCollect(_ content: String, options: [String] = []) throws -> (InputBinary, URL) {
     let module = compileWat(content, options: options)
@@ -17,7 +16,7 @@ class InputBinaryTests: XCTestCase {
         (module)
         """)
     }
-    
+
     func testBasic1() throws {
         let (binary, _) = try testCollect(
             """
@@ -37,7 +36,7 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(firstExport.index, 0)
         XCTAssertEqual(firstExport.kind, .func)
     }
-    
+
     func testBasic2() throws {
         let content =
             """
@@ -54,7 +53,7 @@ class InputBinaryTests: XCTestCase {
             """
         let (binary1, _) = try testCollect(content)
         let expectedSections1: Set<BinarySection> = [
-            .type, .import, .function, .global, .table, .elem, .memory, .data, .code
+            .type, .import, .function, .global, .table, .elem, .memory, .data, .code,
         ]
         let actualSections1 = Set(binary1.sections.map(\.sectionCode))
         XCTAssertEqual(actualSections1, expectedSections1)
@@ -66,9 +65,9 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(firstImport.module, "foo")
         XCTAssertEqual(firstImport.field, "bar")
         XCTAssertEqual(firstImport.signatureIdx, 0)
-        
+
         XCTAssertEqual(binary1.unresolvedFunctionImportsCount, 1)
-        
+
         let (binary2, _) = try testCollect(content, options: ["-r"])
         var expectedSections2 = expectedSections1
         expectedSections2.insert(.custom)
@@ -81,7 +80,7 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(elemFirstReloc.offset, 6)
         XCTAssertEqual(elemFirstReloc.type, .funcIndexLEB)
         XCTAssertEqual(elemFirstReloc.index, 0)
-        
+
         let codeSection = try XCTUnwrap(binary2.sections.first(where: { $0.sectionCode == .code }))
         XCTAssertEqual(codeSection.relocations.count, 1)
         let codeFirstReloc = try XCTUnwrap(codeSection.relocations.first)

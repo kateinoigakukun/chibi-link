@@ -13,7 +13,7 @@ class Linker {
         var tableElementCount: Int = 0
         var totalFunctionImports: Int = 0
         var totalGlobalImports: Int = 0
-        
+
         for binary in inputs {
             let offsets = InputBinary.RelocOffsets(
                 importedFunctionIndexOffset: totalFunctionImports,
@@ -21,7 +21,7 @@ class Linker {
                 memoryPageOffset: memoryPageOffset
             )
             binary.relocOffsets = offsets
-            
+
             var resolvedCount: Size = 0
             for (idx, funcImport) in binary.funcImports.enumerated() {
                 if funcImport.unresolved {
@@ -30,12 +30,12 @@ class Linker {
                     funcImport.relocatedFunctionIndex = totalFunctionImports + idx - resolvedCount
                 }
             }
-            
+
             memoryPageOffset += binary.memoryPageCount
             totalFunctionImports += binary.unresolvedFunctionImportsCount
             totalGlobalImports += binary.globalImports.count
         }
-        
+
         for binary in inputs {
             binary.relocOffsets?.tableIndexOffset = tableElementCount
             tableElementCount += binary.tableElemSize
@@ -55,7 +55,6 @@ class Linker {
                 default: break
                 }
             }
-            
         }
     }
 
