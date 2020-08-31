@@ -36,7 +36,8 @@ func compileWat(_ content: String, options: [String] = []) -> URL {
     return output
 }
 
-func createInputBinary(_ url: URL) -> InputBinary {
+func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
     let bytes = try! Array(Data(contentsOf: url))
-    return InputBinary(filename: url.lastPathComponent, data: bytes)
+    let filename = filename ?? url.lastPathComponent
+    return InputBinary(filename: filename, data: bytes)
 }

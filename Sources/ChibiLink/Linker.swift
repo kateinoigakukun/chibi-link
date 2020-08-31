@@ -31,7 +31,7 @@ class Linker {
                 }
             }
             
-            memoryPageOffset += binary.memoryPageCount!
+            memoryPageOffset += binary.memoryPageCount
             totalFunctionImports += binary.unresolvedFunctionImportsCount
             totalGlobalImports += binary.globalImports.count
         }
@@ -59,7 +59,9 @@ class Linker {
         }
     }
 
-    func link() {}
+    func link() {
+        calculateRelocOffsets()
+    }
 }
 
 func performLinker(_ filenames: [String]) throws {

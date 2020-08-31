@@ -99,7 +99,7 @@ class InputBinary {
     fileprivate(set) var exports: [Export] = []
 
     fileprivate(set) var functionCount: Int!
-    fileprivate(set) var tableElemSize: Size!
+    fileprivate(set) var tableElemSize: Size = 0
 
     fileprivate(set) var debugNames: [String] = []
     
@@ -116,8 +116,8 @@ class InputBinary {
 
     var relocOffsets: RelocOffsets? = nil
     
-    var memoryPageCount: Int? {
-        sections.first(where: { $0.sectionCode == .memory })!.memoryInitialSize
+    var memoryPageCount: Int {
+        sections.first(where: { $0.sectionCode == .memory })?.memoryInitialSize ?? 0
     }
     var unresolvedFunctionImportsCount: Int = 0
 
