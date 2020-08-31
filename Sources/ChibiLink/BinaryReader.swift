@@ -28,7 +28,7 @@ protocol BinaryReaderDelegate {
     func onMemory(_ memoryIndex: Int, _ pageLimits: Limits)
     func onExport(_ exportIndex: Int, _ kind: ExternalKind,
                   _ itemIndex: Int, _ name: String)
-    func onElementSegmentFunctionIndex(_ segmentIndex: Int, _ funcIndex: Int)
+    func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int)
     
     func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int)
     func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int)
@@ -321,10 +321,9 @@ class BinaryReader {
             _ = readU32Leb128() // tableIndex
             try readI32InitExpr(segmentIndex: i)
             let funcIndicesCount = Int(readU32Leb128())
-            
+            delegate.onElementSegmentFunctionIndexCount(i, funcIndicesCount)
             for _ in 0..<funcIndicesCount {
-                let funcIdx = Int(readU32Leb128())
-                delegate.onElementSegmentFunctionIndex(i, funcIdx)
+                _ = Int(readU32Leb128()) // funcIdx
             }
         }
     }

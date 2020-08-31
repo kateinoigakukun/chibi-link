@@ -46,7 +46,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onTable(_ index: Int, _ type: ElementType, _ limits: Limits) {}
     func onMemory(_ memoryIndex: Int, _ pageLimits: Limits) {}
     func onExport(_ exportIndex: Int, _ kind: ExternalKind, _ itemIndex: Int, _ name: String) {}
-    func onElementSegmentFunctionIndex(_ segmentIndex: Int, _ funcIndex: Int) {}
+    func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int) {}
     func onInitExprI32ConstExpr(_ segmentIndex: Int, _ value: UInt32) {}
     func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int) {}
     func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int) {}
@@ -126,9 +126,9 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(segmentIndex, 0)
                 XCTAssertEqual(value, 0)
             }
-            override func onElementSegmentFunctionIndex(_ segmentIndex: Int, _ funcIndex: Int) {
+            override func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int) {
                 XCTAssertEqual(segmentIndex, 0)
-                XCTAssertEqual(funcIndex, 0)
+                XCTAssertEqual(indexCount, 1)
             }
             override func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int) {
                 XCTAssertEqual(memoryIndex, 0)
