@@ -16,10 +16,6 @@ enum BinarySection: UInt8 {
     case data = 11
 }
 
-enum BinaryCustomSection: String {
-    case name, reloc, linking
-}
-
 enum NameSectionSubsection: UInt8 {
     case function = 1
 }

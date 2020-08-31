@@ -50,14 +50,14 @@ class NopDelegate: BinaryReaderDelegate {
     func onInitExprI32ConstExpr(_ segmentIndex: Int, _ value: UInt32) {}
     func beginDataSegment(_ segmentIndex: Int, _ memoryIndex: Int) {}
     func onDataSegmentData(_ segmentIndex: Int, _ data: ArraySlice<UInt8>, _ size: Int) {}
-    func onRelocCount(_ relocsCount: Int, _ section: BinarySection, _ sectionName: String) {}
+    func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int) {}
     func onReloc(_ type: RelocType, _ offset: UInt32, _ index: UInt32, _ addend: UInt32) {}
 }
 
-func testRead(_ delegate: BinaryReaderDelegate, options _: [String] = [], _ content: String) throws {
+func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {
     let module = createFile(content)
     let (output, _) = makeTemporaryFile()
-    exec("/usr/local/bin/wat2wasm", [module.path, "-o", output.path])
+    exec("/usr/local/bin/wat2wasm", [module.path, "-o", output.path] + options)
     let bytes = try Array(Data(contentsOf: output))
     let reader = BinaryReader(bytes: bytes, delegate: delegate)
     try reader.readModule()
@@ -138,9 +138,7 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(hello, "hello")
             }
         }
-        try testRead(
-            Delegate(),
-            """
+        let content = """
             (module
               (import "foo" "bar" (func (result i32)))
 
@@ -153,6 +151,19 @@ class BinaryReaderTests: XCTestCase {
                 (i32.add (call 0) (i32.load8_s (i32.const 1)))))
 
             """
-        )
+        try testRead(Delegate(), content)
+        class RelocDelegate: NopDelegate {
+            var sections: [BinarySection] = []
+            var expectedSections: [BinarySection] = [.elem, .code]
+            override func beginSection(_ section: BinarySection, size _: UInt32) {
+                sections.append(section)
+            }
+            override func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int) {
+                let section = sections[sectionIndex]
+                let expected = expectedSections.removeFirst()
+                XCTAssertEqual(section, expected)
+            }
+        }
+        try testRead(RelocDelegate(), options: ["-r"], content)
     }
 }

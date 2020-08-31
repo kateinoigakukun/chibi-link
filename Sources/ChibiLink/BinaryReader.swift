@@ -36,8 +36,7 @@ protocol BinaryReaderDelegate {
     func beginNamesSection(_ size: UInt32)
     func onFunctionName(_ index: Int, _ name: String)
 
-    func onRelocCount(_ relocsCount: Int, _ section: BinarySection,
-                      _ sectionName: String)
+    func onRelocCount(_ relocsCount: Int, _ sectionIndex: Int)
     
     func onReloc(_ type: RelocType, _ offset: UInt32,
                  _ index: UInt32, _ addend: UInt32)
@@ -350,11 +349,11 @@ class BinaryReader {
     func readCustomSection(sectionSize: UInt32) throws {
         let sectionName = readString()
         // BeginCustomSection
-        let section = BinaryCustomSection(rawValue: sectionName)
-        switch section {
-        case .name:
+        switch sectionName {
+        case "name":
             try readNameSection(sectionSize: sectionSize)
-//        case .reloc:
+        case _ where sectionName.hasPrefix("reloc."):
+            try readRelocSection(sectionSize: sectionSize)
         default:
             print("Warning: Custom section '\(sectionName)' is currently not supported")
         }
@@ -385,19 +384,10 @@ class BinaryReader {
     }
     
     func readRelocSection(sectionSize: UInt32) throws {
-        let rawSection = readU8Fixed()
-        guard let section = BinarySection(rawValue: rawSection) else {
-            throw Error.invalidSectionCode(rawSection)
-        }
-        let sectionName: String
-        if section == .custom {
-            sectionName = readString()
-        } else {
-            sectionName = String(describing: section)
-        }
+        let sectionIndex = Int(readU32Leb128())
         let relocsCount = Int(readU32Leb128())
-        delegate.onRelocCount(relocsCount, section, sectionName)
-        
+        delegate.onRelocCount(relocsCount, sectionIndex)
+
         for _ in 0..<relocsCount {
             let rawType = readU8Fixed()
             guard let type = RelocType(rawValue: rawType) else {
