@@ -52,6 +52,7 @@ class FunctionImport {
     let field: String
     let signatureIdx: Int
     var active: Bool
+    var relocatedFunctionIndex: Index?
 
     init(module: String, field: String, signatureIdx: Int, active: Bool) {
         self.module = module
@@ -101,6 +102,24 @@ class InputBinary {
     fileprivate(set) var tableElemSize: Size!
 
     fileprivate(set) var debugNames: [String] = []
+    
+    
+    struct RelocOffsets {
+        var importedFunctionIndexOffset: Offset
+        var importedGlobalindexOffset: Offset
+        var memoryPageOffset: Offset
+        var tableIndexOffset: Offset?
+        var typeIndexOffset: Offset?
+        var globalIndexOffset: Offset?
+        var functionIndexOffset: Offset?
+    }
+
+    var relocOffsets: RelocOffsets? = nil
+    
+    var memoryPageCount: Int? {
+        sections.first(where: { $0.sectionCode == .memory })!.memoryInitialSize
+    }
+    var unresolvedFunctionImportsCount: Int = 0
 
     init(filename: String, data: [UInt8]) {
         self.filename = filename
@@ -154,6 +173,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
             active: true
         )
         binary.funcImports.append(funcImport)
+        binary.unresolvedFunctionImportsCount += 1
     }
 
     func onImportMemory(_: Index, _: String, _: String, _: Index, _: Limits) {
