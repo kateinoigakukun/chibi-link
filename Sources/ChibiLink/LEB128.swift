@@ -1,3 +1,7 @@
+enum LEB128 {
+    static let maxLength: Int = 5
+}
+
 func decodeULEB128<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> (value: T, offset: Int)
     where T: UnsignedInteger, T: FixedWidthInteger {
     var index: Int = bytes.startIndex

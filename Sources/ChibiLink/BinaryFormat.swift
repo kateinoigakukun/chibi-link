@@ -5,7 +5,7 @@ typealias Index = Int
 typealias Offset = Int
 typealias Size = Int
 
-enum BinarySection: UInt8 {
+enum BinarySection: UInt8, CaseIterable {
     case custom = 0
     case type = 1
     case `import` = 2

@@ -27,9 +27,10 @@ class Linker {
         for binary in inputs {
             for funcImport in binary.funcImports {
                 guard let exportIndex = exportIndexMap[funcImport.field] else {
-                    fatalError()
+                    print("Warning: undefined symbol: \(funcImport.field)")
+                    continue
                 }
-                
+
                 let info = exportList[exportIndex]
                 funcImport.unresolved = false
                 funcImport.foreignBinary = info.binary

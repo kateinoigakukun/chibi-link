@@ -1,8 +1,10 @@
 @testable import ChibiLink
 import XCTest
 
-func testLink(_ contents: [String: String]) throws {
+@discardableResult
+func testLink(_ contents: [String: String]) throws -> URL {
     let linker = Linker()
+    var inputs: [InputBinary] = []
     for (filename, content) in contents {
         let relocatable = compileWat(content, options: ["-r"])
         let binary = createInputBinary(relocatable, filename: filename)
@@ -10,8 +12,16 @@ func testLink(_ contents: [String: String]) throws {
         let reader = BinaryReader(bytes: binary.data, delegate: collector)
         try reader.readModule()
         linker.append(binary)
+        inputs.append(binary)
+        print("Linking \(relocatable)")
     }
     linker.link()
+    let (output, handle) = makeTemporaryFile()
+    try! handle.close()
+    let stream = OutputByteStream(path: output.path)
+    let writer = OutputWriter(stream: stream, inputs: inputs)
+    try writer.writeBinary()
+    return output
 }
 
 class LinkerTests: XCTestCase {
@@ -34,21 +44,34 @@ class LinkerTests: XCTestCase {
         ])
     }
 
-    func testImports() throws {
-        try testLink([
+    func testMergeImports() throws {
+        let output = try testLink([
             "foo.wat": """
-            (module
-              (func (result i32)
-                (i32.add (i32.const 0) (i32.const 1))
-              )
-              (export "bar" (func 0))
-            )
-            """,
-            "main.wat": """
             (module
               (import "foo" "bar" (func (result i32)))
             )
             """,
+            "main.wat": """
+            (module
+              (import "foo" "fizz" (func (result i32)))
+            )
+            """,
         ])
+        let bytes = try Array(Data(contentsOf: output))
+        class Collector: NopDelegate {
+            var importedFunctions: [String] = []
+            override func onImportFunc(
+                _ importIndex: Index,
+                _ module: String, _ field: String,
+                _ funcIndex: Index,
+                _ signatureIndex: Index
+            ) {
+                importedFunctions.append(field)
+            }
+        }
+        let collector = Collector()
+        let reader = BinaryReader(bytes: bytes, delegate: collector)
+        try reader.readModule()
+        XCTAssertEqual(collector.importedFunctions.sorted(), ["bar", "fizz"])
     }
 }
