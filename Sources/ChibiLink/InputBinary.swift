@@ -53,6 +53,8 @@ class FunctionImport {
     let signatureIdx: Int
     var unresolved: Bool
     var relocatedFunctionIndex: Index?
+    var foreignBinary: InputBinary?
+    var foreignIndex: Index?
 
     init(module: String, field: String, signatureIdx: Int, unresolved: Bool) {
         self.module = module

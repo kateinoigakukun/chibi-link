@@ -4,6 +4,40 @@ class Linker {
     func append(_ binary: InputBinary) {
         inputs.append(binary)
     }
+    
+    struct ExportInfo {
+        let export: Export
+        let binary: InputBinary
+    }
+
+    func resolveSymbols() {
+        
+        var exportList: [ExportInfo] = []
+        var exportIndexMap: [String: Int] = [:]
+        for binary in inputs {
+            for export in binary.exports {
+                let info = ExportInfo(export: export, binary: binary)
+                exportList.append(info)
+                // TODO: Diagnose if same name export exists and
+                // has different module
+                exportIndexMap[export.name] = exportList.count - 1
+            }
+        }
+        
+        for binary in inputs {
+            for funcImport in binary.funcImports {
+                guard let exportIndex = exportIndexMap[funcImport.field] else {
+                    fatalError()
+                }
+                
+                let info = exportList[exportIndex]
+                funcImport.unresolved = false
+                funcImport.foreignBinary = info.binary
+                funcImport.foreignIndex = info.export.index
+                binary.unresolvedFunctionImportsCount -= 1
+            }
+        }
+    }
 
     func calculateRelocOffsets() {
         var memoryPageOffset: Offset = 0
@@ -59,6 +93,8 @@ class Linker {
     }
 
     func link() {
+        calculateRelocOffsets()
+        resolveSymbols()
         calculateRelocOffsets()
     }
 }
