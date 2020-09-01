@@ -58,7 +58,8 @@ class Linker {
 
             var resolvedCount: Size = 0
             for (idx, funcImport) in binary.funcImports.enumerated() {
-                if funcImport.unresolved {
+                if !funcImport.unresolved {
+                    // when resolved
                     resolvedCount += 1
                 } else {
                     funcImport.relocatedFunctionIndex = totalFunctionImports + idx - resolvedCount
