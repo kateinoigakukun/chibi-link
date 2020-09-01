@@ -151,7 +151,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         var payloadOffset: Offset?
         var payloadSize: Size?
         if hasCount(sectionCode) {
-            let (itemCount, offset) = decodeLEB128(binary.data[state.offset...])
+            let (itemCount, offset) = decodeULEB128(binary.data[state.offset...], UInt32.self)
             assert(itemCount != 0)
             count = itemCount
             payloadOffset = state.offset + offset

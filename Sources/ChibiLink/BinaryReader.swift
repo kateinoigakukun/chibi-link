@@ -97,15 +97,15 @@ class BinaryReader {
     }
 
     func readU32Leb128() -> UInt32 {
-        let (value, advanced) = decodeLEB128(state.bytes[state.offset...])
+        let (value, advanced) = decodeULEB128(state.bytes[state.offset...], UInt32.self)
         state.offset += advanced
         return value
     }
 
     func readS32Leb128() -> UInt32 {
-        let (value, advanced) = decodeSLEB128(state.bytes[state.offset...])
+        let (value, advanced) = decodeSLEB128(state.bytes[state.offset...], Int32.self)
         state.offset += advanced
-        return value
+        return UInt32(bitPattern: value)
     }
 
     func readUInt32() -> UInt32 {
