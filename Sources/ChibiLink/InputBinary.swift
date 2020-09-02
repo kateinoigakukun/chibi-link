@@ -12,7 +12,7 @@ class DataSegment {
 struct Relocation {
     let type: RelocType
     let offset: Offset
-    let index: Index
+    let symbolIndex: Index
     let addend: UInt32
 }
 
@@ -138,6 +138,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
     var currentSection: Section!
     var currentRelocSection: Section!
     let binary: InputBinary
+    let symbolTable = SymbolTable()
     init(binary: InputBinary) {
         self.binary = binary
     }
@@ -244,8 +245,49 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentRelocSection = binary.sections[sectionIndex]
     }
 
-    func onReloc(_ type: RelocType, _ offset: Offset, _ index: Index, _ addend: UInt32) {
-        let reloc = Relocation(type: type, offset: offset, index: index, addend: addend)
+    func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: UInt32) {
+        let reloc = Relocation(type: type, offset: offset, symbolIndex: symbolIndex, addend: addend)
         currentRelocSection.relocations.append(reloc)
+    }
+
+    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+        let target: FunctionSymbol.Target
+        if let name = name {
+            target = .defined((itemIndex: itemIndex, name: name, binary))
+        } else {
+            target = .undefined(binary.funcImports[itemIndex])
+        }
+        let sym = FunctionSymbol(
+            target: target,
+            flags: SymbolFlags(rawValue: flags)
+        )
+        symbolTable.addFunctionSymbol(sym)
+    }
+    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+        let target: GlobalSymbol.Target
+        if let name = name {
+            target = .defined((itemIndex: itemIndex, name: name, binary))
+        } else {
+            target = .undefined(binary.globalImports[itemIndex])
+        }
+        let sym = GlobalSymbol(
+            target: target,
+            flags: SymbolFlags(rawValue: flags)
+        )
+        symbolTable.addGlobalSymbol(sym)
+    }
+    func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String,
+                      _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
+        let target: DataSymbol.Target
+        if let content = content {
+            target = .defined(content)
+        } else {
+            target = .undefined(name)
+        }
+        let sym = DataSymbol(
+            target: target,
+            flags: SymbolFlags(rawValue: flags)
+        )
+        symbolTable.addDataSymbol(sym)
     }
 }

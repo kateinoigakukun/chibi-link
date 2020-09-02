@@ -72,3 +72,32 @@ struct Limits {
     var max: Size?
     var isShared: Bool
 }
+
+enum LinkingEntryType: UInt8 {
+  case segmentInfo = 5
+  case initFunctions = 6
+  case comdatInfo = 7
+  case symbolTable = 8
+}
+
+enum SymbolType: UInt8 {
+  case function = 0
+  case data = 1
+  case global = 2
+}
+
+let SYMBOL_FLAG_UNDEFINED: UInt32 = 0x10
+
+let SYMBOL_VISIBILITY_MASK: UInt32 = 0x4
+let SYMBOL_BINDING_MASK: UInt32 = 0x3
+
+let SYMBOL_BINDING_GLOBAL: UInt32 = 0x0
+let SYMBOL_BINDING_WEAK: UInt32 = 0x1
+let SYMBOL_BINDING_LOCAL: UInt32 = 0x2
+
+let SYMBOL_VISIBILITY_DEFAULT: UInt32 = 0x0
+let SYMBOL_VISIBILITY_HIDDEN: UInt32 = 0x4
+
+let SYMBOL_EXPORTED: UInt32 = 0x20
+let SYMBOL_EXPLICIT_NAME: UInt32 = 0x40
+let SYMBOL_NO_STRIP: UInt32 = 0x80

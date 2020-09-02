@@ -23,6 +23,15 @@ class NopDelegate: BinaryReaderDelegate {
     func onDataSegmentData(_: Int, _: ArraySlice<UInt8>, _: Int) {}
     func onRelocCount(_: Int, _: Int) {}
     func onReloc(_: RelocType, _: Offset, _: Index, _: UInt32) {}
+    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+    }
+    
+    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+    }
+    
+    func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String, _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
+    }
+    
 }
 
 func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {

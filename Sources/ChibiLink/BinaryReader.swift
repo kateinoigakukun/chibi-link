@@ -41,6 +41,15 @@ protocol BinaryReaderDelegate {
                  _ index: Index, _ addend: UInt32)
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
+    
+//    func onSymbolCount(_ count: Int)
+//    func onSymbol(_ index: Index, _ type: SymbolType, _ flags: UInt32)
+    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
+    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
+    func onDataSymbol(
+        _ index: Index, _ flags: UInt32, _ name: String,
+        _ content: (segmentIndex: Index, offset: Offset, size: Size)?
+    )
 }
 
 class BinaryReader {
@@ -356,6 +365,8 @@ class BinaryReader {
         switch sectionName {
         case "name":
             try readNameSection(sectionSize: sectionSize)
+        case "linking":
+            try readLinkingSection(sectionSize: sectionSize)
         case _ where sectionName.hasPrefix("reloc."):
             try readRelocSection(sectionSize: sectionSize)
         default:
@@ -409,6 +420,62 @@ class BinaryReader {
                 addend = 0
             }
             delegate.onReloc(type, offset, index, addend)
+        }
+    }
+    
+    func readLinkingSection(sectionSize _: Size) throws {
+        // BeginLinkingSection
+        let version = readU32Leb128()
+        assert(version == 2)
+        while (state.offset < sectionEnd) {
+            let linkingTypeCode = readU8Fixed()
+            let linkingType = LinkingEntryType(rawValue: linkingTypeCode)
+            let subSectionSize = readOffset()
+            let subSectionEnd = state.offset + subSectionSize
+
+            switch linkingType {
+            case .symbolTable:
+                let count = Int(readU32Leb128())
+//                delegate.onSymbolCount(count)
+                for i in 0..<count {
+                    let symTypeCode = readU8Fixed()
+                    let symFlags = readU32Leb128()
+                    let symType = SymbolType(rawValue: symTypeCode)!
+//                    delegate.onSymbol(i, symType, symFlags)
+                    
+                    switch symType {
+                    case .function, .global:
+                        let itemIndex = Index(readU32Leb128())
+                        var name: String?
+                        if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
+                            name = readString()
+                        }
+                        if (symType == .function) {
+                            delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
+                        } else {
+                            delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
+                        }
+                    case .data:
+                        let name = readString()
+                        var content: (segmentIndex: Index, offset: Offset, size: Size)?
+                        if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
+                            content = (
+                                Index(readU32Leb128()),
+                                Offset(readU32Leb128()),
+                                Size(readU32Leb128())
+                            )
+                        }
+                        delegate.onDataSymbol(i, symFlags, name, content)
+                    }
+                }
+            default:
+                if let linkingType = linkingType {
+                    print("Warning: Linking subsection '\(String(describing: linkingType))' is not supported now")
+                } else {
+                    print("Warning: Linking subsection unknown code '\(linkingTypeCode)' is not supported now")
+                }
+                state.offset = subSectionEnd
+            }
         }
     }
 }
