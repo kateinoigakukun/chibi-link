@@ -2,7 +2,7 @@
 import XCTest
 
 @discardableResult
-func testLink(_ contents: [String: String]) throws -> URL {
+func testLink(_ contents: [String: String]) throws -> [UInt8] {
     let linker = Linker()
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
@@ -17,13 +17,10 @@ func testLink(_ contents: [String: String]) throws -> URL {
         print("Linking \(relocatable)")
     }
     linker.link()
-    let (output, handle) = makeTemporaryFile()
-    try! handle.close()
     let stream = InMemoryOutputByteStream()
     let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs)
     try writer.writeBinary()
-    try Data(stream.bytes).write(to: output)
-    return output
+    return stream.bytes
 }
 
 class LinkerTests: XCTestCase {
@@ -47,7 +44,7 @@ class LinkerTests: XCTestCase {
     }
 
     func testMergeImports() throws {
-        let output = try testLink([
+        let bytes = try testLink([
             "foo.wat": """
             (module
               (import "foo" "bar" (func (result i32)))
@@ -65,7 +62,7 @@ class LinkerTests: XCTestCase {
             )
             """,
         ])
-        let bytes = try Array(Data(contentsOf: output))
+
         class Collector: NopDelegate {
             var importedFunctions: [String] = []
             override func onImportFunc(
