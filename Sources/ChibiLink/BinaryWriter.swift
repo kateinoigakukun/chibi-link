@@ -89,11 +89,19 @@ class BinaryWriter {
         }
     }
 
-    func writeDataSegment(_ segment: DataSegment) throws {
-        try writeIndex(segment.memoryIndex)
+    func writeDataSegment(_ segment: OutputSegment, startOffset: Offset) throws {
+        try writeIndex(0) // memory index
         // TODO: i64?
-        try writeI32InitExpr(.i32(Int32(segment.offset)))
-        try writeBytes(segment.data)
+        try writeI32InitExpr(.i32(Int32(startOffset)))
+        try writeULEB128(UInt32(segment.size))
+        let base = stream.currentOffset
+        for chunk in segment.chunks {
+            let written = stream.currentOffset - base
+            let padding = chunk.offset - written
+            let paddingBytes = Array<UInt8>(repeating: 0, count: padding)
+            try stream.write(paddingBytes)
+            try stream.write(chunk.segment.data)
+        }
     }
     
     func writeSectionPayload(_ section: Section) throws {
@@ -124,10 +132,10 @@ class OutputWriter {
                 sectionsMap[sec.sectionCode, default: []].append(sec)
             }
         }
-        let importSection = ImportSeciton(symbolTable: symbolTable)
-        try importSection.write(writer: writer)
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
         try typeSection.write(writer: writer)
+        let importSection = ImportSeciton(symbolTable: symbolTable)
+        try importSection.write(writer: writer)
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
         try dataSection.write(writer: writer)
     }

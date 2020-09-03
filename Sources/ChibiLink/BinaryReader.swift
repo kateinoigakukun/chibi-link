@@ -235,6 +235,8 @@ class BinaryReader {
                 try readExportSection(sectionSize: size)
             case .elem:
                 try readElementSection(sectionSize: size)
+            case .data:
+                try readDataSection(sectionSize: size)
             default:
                 print("Warning: Section '\(section)' is currently not supported")
             }

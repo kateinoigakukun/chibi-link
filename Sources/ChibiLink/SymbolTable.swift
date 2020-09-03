@@ -74,11 +74,9 @@ final class GlobalSymbol: SymbolProtocol {
 
 final class DataSymbol: SymbolProtocol {
     struct DefinedSegment: DefinedTarget {
-        let segmentIndex: Index
         let name: String
-        let offset: Offset
-        let size: Size
         let binary: InputBinary
+        let segment: DataSegment
     }
     struct UndefinedSegment: UndefinedTarget {
         let name: String

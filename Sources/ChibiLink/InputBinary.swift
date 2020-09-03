@@ -3,7 +3,7 @@ class DataSegment {
     var offset: Offset!
     var data: ArraySlice<UInt8>!
     var size: Size!
-    var info: Info?
+    var info: Info!
     
     struct Info {
         let name: String
@@ -198,7 +198,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
     }
 
     func onImportMemory(_: Index, _: String, _: String, _: Index, _: Limits) {
-        fatalError("TODO")
+//        fatalError("TODO")
     }
 
     func onImportGlobal(_: Index, _ module: String, _ field: String, _: Index, _ type: ValueType, _ mutable: Bool) {
@@ -293,13 +293,12 @@ class LinkInfoCollector: BinaryReaderDelegate {
                       _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
         let target: DataSymbol.Target
         if let content = content {
+            let segment = dataSection.dataSegments[content.segmentIndex]
             target = .defined(
                 DataSymbol.DefinedSegment(
-                    segmentIndex: content.segmentIndex,
                     name: name,
-                    offset: content.offset,
-                    size: content.size,
-                    binary: binary
+                    binary: binary,
+                    segment: segment
                 )
             )
         } else {
