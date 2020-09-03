@@ -53,14 +53,16 @@ class FunctionImport {
     let signatureIdx: Int
     var unresolved: Bool
     var relocatedFunctionIndex: Index?
+    weak var selfBinary: InputBinary?
     var foreignBinary: InputBinary?
     var foreignIndex: Index?
 
-    init(module: String, field: String, signatureIdx: Int, unresolved: Bool) {
+    init(module: String, field: String, signatureIdx: Int, unresolved: Bool, selfBinary: InputBinary) {
         self.module = module
         self.field = field
         self.signatureIdx = signatureIdx
         self.unresolved = unresolved
+        self.selfBinary = selfBinary
     }
 }
 
@@ -107,13 +109,13 @@ class InputBinary {
     fileprivate(set) var symbols: [Symbol] = []
 
     struct RelocOffsets {
-        var importedFunctionIndexOffset: Offset
-        var importedGlobalindexOffset: Offset
-        var memoryPageOffset: Offset
-        var tableIndexOffset: Offset?
-        var typeIndexOffset: Offset?
-        var globalIndexOffset: Offset?
-        var functionIndexOffset: Offset?
+        let importedFunctionIndexOffset: Offset
+        let importedGlobalindexOffset: Offset
+        let memoryPageOffset: Offset
+        let tableIndexOffset: Offset
+        let typeIndexOffset: Offset
+        let globalIndexOffset: Offset
+        let functionIndexOffset: Offset
     }
 
     var relocOffsets: RelocOffsets?
@@ -175,7 +177,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
         let funcImport = FunctionImport(
             module: module, field: field,
             signatureIdx: signatureIndex,
-            unresolved: true
+            unresolved: true,
+            selfBinary: binary
         )
         binary.funcImports.append(funcImport)
         binary.unresolvedFunctionImportsCount += 1

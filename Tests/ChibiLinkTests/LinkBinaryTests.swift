@@ -50,7 +50,9 @@ class InputBinaryTests: XCTestCase {
 
               (memory (data "hello"))
               (func (result i32)
-                (i32.add (call 0) (i32.load8_s (i32.const 1)))))
+                (i32.add (call 0) (i32.const 1))
+              )
+            )
             """
         let (binary1, _) = try testCollect(content)
         let expectedSections1: Set<BinarySection> = [

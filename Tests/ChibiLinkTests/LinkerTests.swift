@@ -20,7 +20,7 @@ func testLink(_ contents: [String: String]) throws -> URL {
     let (output, handle) = makeTemporaryFile()
     try! handle.close()
     let stream = OutputByteStream(path: output.path)
-    let writer = OutputWriter(stream: stream, inputs: inputs)
+    let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs)
     try writer.writeBinary()
     return output
 }
@@ -50,11 +50,17 @@ class LinkerTests: XCTestCase {
             "foo.wat": """
             (module
               (import "foo" "bar" (func (result i32)))
+              (func (result i32)
+                (i32.add (call 0) (i32.const 1))
+              )
             )
             """,
             "main.wat": """
             (module
               (import "foo" "fizz" (func (result i32)))
+              (func (result i32)
+                (i32.add (call 0) (i32.const 1))
+              )
             )
             """,
         ])

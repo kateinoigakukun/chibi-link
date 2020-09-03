@@ -55,7 +55,20 @@ class BinaryWriter {
         try writeFixedUInt8(ExternalKind.func.rawValue)
         try writeULEB128(UInt32(funcImport.signatureIdx + typeIndexOffset))
     }
-    
+
+    func writeImport(_ theImport: ImportSeciton.Import) throws {
+        try writeString(theImport.module)
+        try writeString(theImport.field)
+        switch theImport.kind {
+        case let .function(signatureIndex):
+            try writeFixedUInt8(ExternalKind.func.rawValue)
+            try writeULEB128(UInt32(signatureIndex))
+        case let .global(type, mutable):
+            try writeFixedUInt8(ExternalKind.global.rawValue)
+            try writeFixedUInt8(type.rawValue)
+            try writeFixedUInt8(mutable ? 0 : 1)
+        }
+    }
     
     func writeSectionPayload(_ section: Section) throws {
         let offset = section.payloadOffset!
@@ -66,9 +79,13 @@ class BinaryWriter {
 
 class OutputWriter {
     let writer: BinaryWriter
+    let symbolTable: SymbolTable
     let inputs: [InputBinary]
-    init(stream: OutputByteStream, inputs: [InputBinary]) {
+    init(stream: OutputByteStream,
+         symbolTable: SymbolTable,
+         inputs: [InputBinary]) {
         self.writer = BinaryWriter(stream: stream)
+        self.symbolTable = symbolTable
         self.inputs = inputs
     }
 
@@ -81,67 +98,9 @@ class OutputWriter {
                 sectionsMap[sec.sectionCode, default: []].append(sec)
             }
         }
-        for section in BinarySection.allCases {
-            guard let sections = sectionsMap[section] else { continue }
-            try writeCombinedSection(section, sections)
-        }
-    }
-
-    func writeCombinedSection(_ section: BinarySection, _ sections: [Section]) throws {
-        guard !sections.isEmpty else { return }
-        // FIXME: temporary
-        guard section == .type || section == .import else { return }
-        var totalCount: Index = 0
-        var totalSize: Index = 0
-        for sec in sections {
-            totalCount += sec.count!
-            totalSize += sec.payloadSize!
-        }
-        switch section {
-        case .import:
-            try writeImportSection()
-        case .type:
-            // FIXME
-            try writer.writeSectionCode(.type)
-            let lengthBytes = encodeULEB128(UInt32(totalCount))
-            totalSize += lengthBytes.count
-            try writer.writeULEB128(UInt32(totalSize))
-            try writer.writeULEB128(UInt32(totalCount))
-            
-            for sec in sections {
-                try writer.writeSectionPayload(sec)
-            }
-        default:
-            print("Warning: Section '\(section)' is not yet supported to write out as combined section")
-        }
-    }
-
-    func writeImportSection() throws {
-        var importsCount = 0
-        for binary in inputs {
-            for funcImport in binary.funcImports {
-                if funcImport.unresolved {
-                    importsCount += 1
-                }
-            }
-//            importsCount += binary.globalImports.count
-        }
-        try writer.writeSectionCode(.import)
-        let placeholder = try writer.writeSizePlaceholder()
-        let payloadStart = writer.offset
-        
-        try writer.writeULEB128(UInt32(importsCount))
-        for binary in inputs {
-            for funcImport in binary.funcImports {
-                if funcImport.unresolved {
-                    try writer.writeFunctionImport(
-                        funcImport,
-                        typeIndexOffset: binary.relocOffsets!.typeIndexOffset!
-                    )
-                }
-            }
-        }
-        let payloadSize = writer.offset - payloadStart
-        try writer.fillSizePlaceholder(placeholder, value: payloadSize)
+        let importSection = ImportSeciton(symbolTable: symbolTable)
+        try importSection.write(writer: writer)
+        let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
+        try typeSection.write(writer: writer)
     }
 }

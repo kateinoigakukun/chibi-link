@@ -15,6 +15,7 @@ protocol DefinedTarget {
 
 protocol UndefinedTarget {
     var name: String { get }
+    var module: String { get }
 }
 
 struct IndexableTarget: DefinedTarget {
@@ -42,9 +43,17 @@ enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget> {
     }
 }
 
-final class FunctionSymbol {
+protocol SymbolProtocol {
+    associatedtype Defined: DefinedTarget
+    associatedtype Import: UndefinedTarget
+    typealias Target = SymbolTarget<Defined, Import>
+    var target: Target { get }
+    var flags: SymbolFlags { get }
+}
+
+final class FunctionSymbol: SymbolProtocol {
     typealias Target = SymbolTarget<IndexableTarget, FunctionImport>
-    fileprivate var target: Target
+    fileprivate(set) var target: Target
     let flags: SymbolFlags
     fileprivate init(target: Target, flags: SymbolFlags) {
         self.target = target
@@ -52,9 +61,9 @@ final class FunctionSymbol {
     }
 }
 
-final class GlobalSymbol {
+final class GlobalSymbol: SymbolProtocol {
     typealias Target = SymbolTarget<IndexableTarget, GlobalImport>
-    fileprivate var target: Target
+    fileprivate(set) var target: Target
     let flags: SymbolFlags
     
     fileprivate init(target: Target, flags: SymbolFlags) {
@@ -63,7 +72,7 @@ final class GlobalSymbol {
     }
 }
 
-final class DataSymbol {
+final class DataSymbol: SymbolProtocol {
     struct DefinedSegment: DefinedTarget {
         let segmentIndex: Index
         let name: String
@@ -73,10 +82,11 @@ final class DataSymbol {
     }
     struct UndefinedSegment: UndefinedTarget {
         let name: String
+        let module: String = "env"
     }
     typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment>
     
-    fileprivate var target: Target
+    fileprivate(set) var target: Target
     let flags: SymbolFlags
     
     fileprivate init(target: Target, flags: SymbolFlags) {
@@ -100,10 +110,29 @@ enum Symbol {
             return symbol.target.name
         }
     }
+    
+    var isUndefined: Bool {
+        func isUndef<T, U>(_ target: SymbolTarget<T, U>) -> Bool {
+            guard case .undefined = target else { return false }
+            return true
+        }
+        switch self {
+        case .function(let symbol):
+            return isUndef(symbol.target)
+        case .data(let symbol):
+            return isUndef(symbol.target)
+        case .global(let symbol):
+            return isUndef(symbol.target)
+        }
+    }
 }
 
 class SymbolTable {
     private var symbolMap: [String: Symbol] = [:]
+    
+    func symbols() -> [Symbol] {
+        Array(symbolMap.values)
+    }
 
     func addFunctionSymbol(_ target: FunctionSymbol.Target,
                            flags: SymbolFlags) -> FunctionSymbol {

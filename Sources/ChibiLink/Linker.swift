@@ -42,20 +42,26 @@ class Linker {
 
     func calculateRelocOffsets() {
         var memoryPageOffset: Offset = 0
-        var typeCount: Int = 0
-        var globalCount: Int = 0
-        var functionCount: Int = 0
         var tableElementCount: Int = 0
         var totalFunctionImports: Int = 0
         var totalGlobalImports: Int = 0
+        
+        typealias PartialOffsetSet = (
+            importedFunctionIndexOffset: Offset,
+            importedGlobalindexOffset: Offset,
+            memoryPageOffset: Offset,
+            tableIndexOffset: Offset
+        )
+        var partialOffsets: [PartialOffsetSet] = []
 
         for binary in inputs {
-            let offsets = InputBinary.RelocOffsets(
+            let offsetSet: PartialOffsetSet = (
                 importedFunctionIndexOffset: totalFunctionImports,
                 importedGlobalindexOffset: totalGlobalImports,
-                memoryPageOffset: memoryPageOffset
+                memoryPageOffset: memoryPageOffset,
+                tableIndexOffset: tableElementCount
             )
-            binary.relocOffsets = offsets
+            partialOffsets.append(offsetSet)
 
             var resolvedCount: Size = 0
             for (idx, funcImport) in binary.funcImports.enumerated() {
@@ -70,23 +76,32 @@ class Linker {
             memoryPageOffset += binary.memoryPageCount
             totalFunctionImports += binary.unresolvedFunctionImportsCount
             totalGlobalImports += binary.globalImports.count
+            tableElementCount += binary.tableElemSize
         }
 
-        for binary in inputs {
-            binary.relocOffsets?.tableIndexOffset = tableElementCount
-            tableElementCount += binary.tableElemSize
+        var typeCount: Int = 0
+        var globalCount: Int = 0
+        var functionCount: Int = 0
 
+        for (index, binary) in inputs.enumerated() {
+            let partial = partialOffsets[index]
+            let offsetSet = InputBinary.RelocOffsets(
+                importedFunctionIndexOffset: partial.importedFunctionIndexOffset,
+                importedGlobalindexOffset: partial.importedGlobalindexOffset,
+                memoryPageOffset: partial.memoryPageOffset,
+                tableIndexOffset: partial.tableIndexOffset,
+                typeIndexOffset: typeCount,
+                globalIndexOffset: totalGlobalImports - binary.globalImports.count + globalCount,
+                functionIndexOffset: totalFunctionImports - binary.funcImports.count + functionCount
+            )
+            binary.relocOffsets = offsetSet
             for sec in binary.sections {
                 switch sec.sectionCode {
                 case .type:
-                    binary.relocOffsets?.typeIndexOffset = typeCount
                     typeCount += sec.count!
                 case .global:
-                    binary.relocOffsets?.globalIndexOffset = totalGlobalImports - sec.binary!.globalImports.count + globalCount
                     globalCount += sec.count!
                 case .function:
-                    binary.relocOffsets?.functionIndexOffset = totalFunctionImports -
-                        sec.binary!.funcImports.count + functionCount
                     functionCount += sec.count!
                 default: break
                 }
@@ -95,8 +110,6 @@ class Linker {
     }
 
     func link() {
-        calculateRelocOffsets()
-        resolveSymbols()
         calculateRelocOffsets()
     }
 }
