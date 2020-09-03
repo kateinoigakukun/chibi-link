@@ -36,6 +36,13 @@ func compileWat(_ content: String, options: [String] = []) -> URL {
     return output
 }
 
+func compileLLVMIR(_ content: String, options: [String] = []) -> URL {
+    let module = createFile(content)
+    let (output, _) = makeTemporaryFile()
+    exec("/usr/local/opt/llvm/bin/llc", [module.path, "-filetype=obj", "-o", output.path] + options)
+    return output
+}
+
 func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
     let bytes = try! Array(Data(contentsOf: url))
     let filename = filename ?? url.lastPathComponent

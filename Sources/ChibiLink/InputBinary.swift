@@ -3,6 +3,13 @@ class DataSegment {
     var offset: Offset!
     var data: ArraySlice<UInt8>!
     var size: Size!
+    var info: Info?
+    
+    struct Info {
+        let name: String
+        let alignment: Int
+        let flags: UInt32
+    }
 
     internal init(memoryIndex: Index) {
         self.memoryIndex = memoryIndex
@@ -140,6 +147,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
     var state: BinaryReader.State!
     var currentSection: Section!
     var currentRelocSection: Section!
+    var dataSection: Section!
+    
     let binary: InputBinary
     let symbolTable: SymbolTable
     init(binary: InputBinary, symbolTable: SymbolTable) {
@@ -171,6 +180,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
         )
         binary.sections.append(section)
         currentSection = section
+        
+        if sectionCode == .data {
+            dataSection = section
+        }
     }
 
     func onImportFunc(_: Index, _ module: String, _ field: String, _: Int, _ signatureIndex: Index) {
@@ -294,5 +307,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
         }
         let symbol = symbolTable.addDataSymbol(target, flags: SymbolFlags(rawValue: flags))
         binary.symbols.append(.data(symbol))
+    }
+    
+    func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
+        let info = DataSegment.Info(name: name, alignment: alignment, flags: flags)
+        dataSection.dataSegments[index].info = info
     }
 }

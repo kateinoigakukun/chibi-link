@@ -50,6 +50,8 @@ protocol BinaryReaderDelegate {
         _ index: Index, _ flags: UInt32, _ name: String,
         _ content: (segmentIndex: Index, offset: Offset, size: Size)?
     )
+    func onSegmentInfo(_ index: Index, _ name: String,
+                       _ alignment: Int, _ flags: UInt32)
 }
 
 class BinaryReader {
@@ -435,39 +437,9 @@ class BinaryReader {
 
             switch linkingType {
             case .symbolTable:
-                let count = Int(readU32Leb128())
-//                delegate.onSymbolCount(count)
-                for i in 0..<count {
-                    let symTypeCode = readU8Fixed()
-                    let symFlags = readU32Leb128()
-                    let symType = SymbolType(rawValue: symTypeCode)!
-//                    delegate.onSymbol(i, symType, symFlags)
-                    
-                    switch symType {
-                    case .function, .global:
-                        let itemIndex = Index(readU32Leb128())
-                        var name: String?
-                        if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
-                            name = readString()
-                        }
-                        if (symType == .function) {
-                            delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
-                        } else {
-                            delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
-                        }
-                    case .data:
-                        let name = readString()
-                        var content: (segmentIndex: Index, offset: Offset, size: Size)?
-                        if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
-                            content = (
-                                Index(readU32Leb128()),
-                                Offset(readU32Leb128()),
-                                Size(readU32Leb128())
-                            )
-                        }
-                        delegate.onDataSymbol(i, symFlags, name, content)
-                    }
-                }
+                readSymbolTable()
+            case .segmentInfo:
+                readSegmentInfo()
             default:
                 if let linkingType = linkingType {
                     print("Warning: Linking subsection '\(String(describing: linkingType))' is not supported now")
@@ -476,6 +448,52 @@ class BinaryReader {
                 }
                 state.offset = subSectionEnd
             }
+        }
+    }
+    
+    func readSymbolTable() {
+        let count = Int(readU32Leb128())
+//                delegate.onSymbolCount(count)
+        for i in 0..<count {
+            let symTypeCode = readU8Fixed()
+            let symFlags = readU32Leb128()
+            let symType = SymbolType(rawValue: symTypeCode)!
+//                    delegate.onSymbol(i, symType, symFlags)
+            
+            switch symType {
+            case .function, .global:
+                let itemIndex = Index(readU32Leb128())
+                var name: String?
+                if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
+                    name = readString()
+                }
+                if (symType == .function) {
+                    delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
+                } else {
+                    delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
+                }
+            case .data:
+                let name = readString()
+                var content: (segmentIndex: Index, offset: Offset, size: Size)?
+                if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
+                    content = (
+                        Index(readU32Leb128()),
+                        Offset(readU32Leb128()),
+                        Size(readU32Leb128())
+                    )
+                }
+                delegate.onDataSymbol(i, symFlags, name, content)
+            }
+        }
+    }
+    
+    func readSegmentInfo() {
+        let count = Int(readU32Leb128())
+        for i in 0..<count {
+            let name = readString()
+            let alignment = readU32Leb128()
+            let flags = readU32Leb128()
+            delegate.onSegmentInfo(i, name, Int(alignment), flags)
         }
     }
 }

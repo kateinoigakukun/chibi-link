@@ -32,6 +32,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String, _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
     }
     
+    func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {}
 }
 
 func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {
@@ -152,5 +153,34 @@ class BinaryReaderTests: XCTestCase {
             }
         }
         try testRead(RelocDelegate(), options: ["-r"], content)
+    }
+    
+    func testSegmentInfo() throws {
+        class Delegate: NopDelegate {
+            typealias Info = (
+                index: Index, name: String, alignment: Int, flags: UInt32
+            )
+            var infoList: [Info] = []
+            override func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
+                infoList.append((index, name, alignment, flags))
+            }
+        }
+        let content = """
+        target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+        target triple = "wasm32-unknown-unknown"
+
+        @bss = hidden global i32 zeroinitializer, align 4
+        @foo = hidden global i32 zeroinitializer, section "WowZero!", align 4
+        @bar = hidden constant i32 42, section "MyAwesomeSection", align 4
+        @baz = hidden global i32 7, section "AnotherGreatSection", align 4
+        """
+        
+        let output = compileLLVMIR(content)
+        let bytes = try Array(Data(contentsOf: output))
+        let delegate = Delegate()
+        let reader = BinaryReader(bytes: bytes, delegate: delegate)
+        try reader.readModule()
+        XCTAssertEqual(delegate.infoList.count, 4)
+        XCTAssertEqual(delegate.infoList[0].name, ".bss.bss")
     }
 }

@@ -18,6 +18,7 @@ enum BinarySection: UInt8, CaseIterable {
     case elem = 9
     case code = 10
     case data = 11
+    case dataCount = 12
 }
 
 enum NameSectionSubsection: UInt8 {
