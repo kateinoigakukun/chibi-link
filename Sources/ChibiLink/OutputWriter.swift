@@ -20,10 +20,18 @@ class OutputWriter {
         }
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
         let importSection = ImportSeciton(symbolTable: symbolTable)
+        let funcSection = FunctionSection(
+            sections: sectionsMap[.function] ?? [], typeSection: typeSection
+        )
+        let codeSection = CodeSection(
+            sections: sectionsMap[.code] ?? [], funcSection: funcSection
+        )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
         try writeSection(typeSection)
         try writeSection(importSection)
+        try writeSection(funcSection)
+        try writeSection(codeSection)
         try writeSection(dataSection)
     }
     

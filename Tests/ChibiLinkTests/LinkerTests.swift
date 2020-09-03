@@ -88,6 +88,9 @@ class LinkerTests: XCTestCase {
         }
         let collector = Collector()
         let reader = BinaryReader(bytes: bytes, delegate: collector)
+        let (output, handle) = makeTemporaryFile()
+        handle.write(Data(bytes))
+        print(output)
         try reader.readModule()
         XCTAssertEqual(collector.importedFunctions.sorted(), ["bar", "fizz"])
     }
@@ -127,9 +130,9 @@ class LinkerTests: XCTestCase {
         }
         let collector = Collector()
         let reader = BinaryReader(bytes: bytes, delegate: collector)
-        try reader.readModule()
         let (output, _) = makeTemporaryFile()
         print(output)
         try Data(bytes).write(to: output)
+        try reader.readModule()
     }
 }

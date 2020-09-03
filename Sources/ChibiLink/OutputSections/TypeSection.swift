@@ -1,28 +1,36 @@
-struct TypeSection: VectorSection {
+class TypeSection: VectorSection {
     var section: BinarySection { .type }
     let size: OutputSectionSize
     let count: Size
 
     private let sections: [Section]
+    private let indexOffsetByFileName: [String: Offset]
 
     func writeVectorContent(writer: BinaryWriter) throws {
         for section in sections {
             try writer.writeSectionPayload(section)
         }
     }
+    
+    func indexOffset(for binary: InputBinary) -> Offset? {
+        return indexOffsetByFileName[binary.filename]
+    }
 
     init(sections: [Section]) {
         var totalSize: Size = 0
         var totalCount: Int = 0
+        var indexOffsets: [String: Offset] = [:]
         for section in sections {
             assert(section.sectionCode == .type)
+            indexOffsets[section.binary!.filename] = totalCount
             totalSize += section.payloadSize!
             totalCount += section.count!
         }
-        let lengthBytes = encodeULEB128(UInt32(totalSize))
+        let lengthBytes = encodeULEB128(UInt32(totalCount))
         totalSize += lengthBytes.count
         size = .fixed(totalSize)
         count = totalCount
         self.sections = sections
+        self.indexOffsetByFileName = indexOffsets
     }
 }

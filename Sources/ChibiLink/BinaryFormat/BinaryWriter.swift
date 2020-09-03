@@ -54,7 +54,6 @@ class BinaryWriter {
     }
 
     func writeBytes(_ bytes: ArraySlice<UInt8>) throws {
-        try writeULEB128(UInt32(bytes.count))
         try stream.write(bytes)
     }
 
