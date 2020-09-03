@@ -110,9 +110,4 @@ class BinaryWriter {
         }
     }
 
-    func writeSectionPayload(_ section: Section) throws {
-        let offset = section.payloadOffset!
-        let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
-        try stream.write(bytes)
-    }
 }

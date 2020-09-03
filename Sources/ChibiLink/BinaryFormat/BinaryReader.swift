@@ -119,14 +119,6 @@ class BinaryReader {
         return UInt32(bitPattern: value)
     }
 
-    func readUInt32() -> UInt32 {
-        let bytes = read(4)
-        return UInt32(bytes[bytes.startIndex + 0])
-            + (UInt32(bytes[bytes.startIndex + 1]) << 8)
-            + (UInt32(bytes[bytes.startIndex + 2]) << 16)
-            + (UInt32(bytes[bytes.startIndex + 3]) << 24)
-    }
-
     func readString() -> String {
         let length = Int(readU32Leb128())
         let bytes = state.bytes[state.offset ..< state.offset + length]

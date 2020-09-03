@@ -81,14 +81,14 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(elemSection.relocations.count, 1)
         let elemFirstReloc = try XCTUnwrap(elemSection.relocations.first)
         XCTAssertEqual(elemFirstReloc.offset, 6)
-        XCTAssertEqual(elemFirstReloc.type, .funcIndexLEB)
+        XCTAssertEqual(elemFirstReloc.type, .functionIndexLEB)
         XCTAssertEqual(elemFirstReloc.symbolIndex, 0)
 
         let codeSection = try XCTUnwrap(binary2.sections.first(where: { $0.sectionCode == .code }))
         XCTAssertEqual(codeSection.relocations.count, 1)
         let codeFirstReloc = try XCTUnwrap(codeSection.relocations.first)
         XCTAssertEqual(codeFirstReloc.offset, 4)
-        XCTAssertEqual(codeFirstReloc.type, .funcIndexLEB)
+        XCTAssertEqual(codeFirstReloc.type, .functionIndexLEB)
         XCTAssertEqual(codeFirstReloc.symbolIndex, 0)
     }
 }

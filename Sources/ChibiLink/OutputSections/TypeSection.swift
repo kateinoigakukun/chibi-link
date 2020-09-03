@@ -8,7 +8,9 @@ class TypeSection: VectorSection {
 
     func writeVectorContent(writer: BinaryWriter) throws {
         for section in sections {
-            try writer.writeSectionPayload(section)
+            let offset = section.payloadOffset!
+            let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
+            try writer.writeBytes(bytes)
         }
     }
     

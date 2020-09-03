@@ -23,10 +23,16 @@ class OutputWriter {
         let funcSection = FunctionSection(
             sections: sectionsMap[.function] ?? [], typeSection: typeSection
         )
-        let codeSection = CodeSection(
-            sections: sectionsMap[.code] ?? [], funcSection: funcSection
-        )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+
+        let relocator = Relocator(
+            symbolTable: symbolTable, typeSection: typeSection,
+            funcSection: funcSection, dataSection: dataSection
+        )
+
+        let codeSection = CodeSection(
+            sections: sectionsMap[.code] ?? [], relocator: relocator
+        )
 
         try writeSection(typeSection)
         try writeSection(importSection)

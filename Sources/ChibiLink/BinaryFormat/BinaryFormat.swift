@@ -56,7 +56,7 @@ enum Opcode: UInt8 {
 }
 
 enum RelocType: UInt8, Equatable {
-    case funcIndexLEB = 0
+    case functionIndexLEB = 0
     case tableIndexSLEB = 1
     case tableIndexI32 = 2
     case memoryAddressLEB = 3
@@ -64,6 +64,18 @@ enum RelocType: UInt8, Equatable {
     case memoryAddressI32 = 5
     case typeIndexLEB = 6
     case globalIndexLEB = 7
+    case functionOffsetI32 = 8
+    case sectionOffsetI32 = 9
+//    case eventIndexLeb = 10
+    case memoryAddressRelSLEB = 11
+    case tableIndexRelSLEB = 12
+    case globalIndexI32 = 13
+    case memoryAddressLeb64 = 14
+    case memoryAddressSLEB64 = 15
+    case memoryAddressI64 = 16
+    case memoryAddressRelSLEB64 = 17
+    case tableIndexSLEB64 = 18
+    case tableIndexI64 = 19
 }
 
 let LIMITS_HAS_MAX_FLAG: UInt8 = 0x1
