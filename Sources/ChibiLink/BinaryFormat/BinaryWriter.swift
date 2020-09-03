@@ -117,34 +117,3 @@ class BinaryWriter {
         try stream.write(bytes)
     }
 }
-
-class OutputWriter {
-    let writer: BinaryWriter
-    let symbolTable: SymbolTable
-    let inputs: [InputBinary]
-    init(stream: OutputByteStream,
-         symbolTable: SymbolTable,
-         inputs: [InputBinary])
-    {
-        writer = BinaryWriter(stream: stream)
-        self.symbolTable = symbolTable
-        self.inputs = inputs
-    }
-
-    func writeBinary() throws {
-        try writer.writeHeader()
-
-        var sectionsMap: [BinarySection: [Section]] = [:]
-        for binary in inputs {
-            for sec in binary.sections {
-                sectionsMap[sec.sectionCode, default: []].append(sec)
-            }
-        }
-        let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
-        try typeSection.write(writer: writer)
-        let importSection = ImportSeciton(symbolTable: symbolTable)
-        try importSection.write(writer: writer)
-        let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
-        try dataSection.write(writer: writer)
-    }
-}
