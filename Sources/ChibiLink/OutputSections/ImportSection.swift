@@ -14,9 +14,15 @@ struct ImportSeciton: VectorSection {
     var count: Int { imports.count }
 
     private(set) var imports: [Import] = []
+    private var importIndexMap: [String: Index] = [:]
 
     mutating func addImport(_ import: Import) {
         imports.append(`import`)
+    }
+    
+    func importIndex<T: UndefinedTarget>(for target: T) -> Index? {
+        let key = uniqueImportKey(module: target.module, field: target.name)
+        return importIndexMap[key]
     }
 
     func writeVectorContent(writer: BinaryWriter) throws {
@@ -28,6 +34,10 @@ struct ImportSeciton: VectorSection {
     init(symbolTable: SymbolTable) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol) else { return }
+            let key = uniqueImportKey(
+                module: newImport.module, field: newImport.field
+            )
+            importIndexMap[key] = imports.count
             imports.append(newImport)
         }
         for symbol in symbolTable.symbols() {
@@ -40,6 +50,10 @@ struct ImportSeciton: VectorSection {
             }
         }
     }
+}
+
+fileprivate func uniqueImportKey(module: String, field: String) -> String {
+    module + "." + field
 }
 
 func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtocol {

@@ -1,23 +1,28 @@
 class Relocator {
     let symbolTable: SymbolTable
     let typeSection: TypeSection
+    let importSection: ImportSeciton
     let funcSection: FunctionSection
     let dataSection: DataSection
+
     init(symbolTable: SymbolTable, typeSection: TypeSection,
+         importSection: ImportSeciton,
          funcSection: FunctionSection, dataSection: DataSection) {
         self.symbolTable = symbolTable
         self.typeSection = typeSection
+        self.importSection = importSection
         self.funcSection = funcSection
         self.dataSection = dataSection
     }
     
     func relocate(section: Section) -> [UInt8] {
-        let offset = section.payloadOffset!
-        var bytes = Array(section.binary!.data[offset ..< offset + section.payloadSize!])
+        let relocRange = section.offset..<section.offset+section.size
+        var body = Array(section.binary!.data[relocRange])
         for reloc in section.relocations {
-            apply(relocation: reloc, binary: section.binary!, bytes: &bytes)
+            apply(relocation: reloc, binary: section.binary!, bytes: &body)
         }
-        return bytes
+        let payload = Array(body[(section.payloadOffset! - section.offset)...])
+        return payload
     }
     
     func translate(relocation: Relocation, binary: InputBinary) -> UInt64 {
@@ -51,12 +56,15 @@ class Relocator {
             // for R_WASM_TYPE_INDEX_LEB, symbolIndex means the index for the type
             return UInt64(typeSection.indexOffset(for: binary)! + relocation.symbolIndex)
         case .functionIndexLEB:
-            guard case let .function(funcSym) = symbol,
-                  case let .defined(target) = funcSym.target else {
-                // TODO
-                return 0
+            guard case let .function(funcSym) = symbol else {
+                fatalError()
             }
-            return UInt64(funcSection.indexOffset(for: binary)! + target.itemIndex)
+            switch funcSym.target {
+            case let .defined(target):
+                return UInt64(funcSection.indexOffset(for: target.binary)! + target.itemIndex)
+            case let .undefined(funcImport):
+                return UInt64(importSection.importIndex(for: funcImport)!)
+            }
         case .globalIndexLEB, .globalIndexI32:
             fatalError("TODO")
         case .functionOffsetI32:

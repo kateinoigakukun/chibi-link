@@ -6,11 +6,13 @@ class FunctionSection: VectorSection {
     private let typeSection: TypeSection
     private let indexOffsetByFileName: [String: Offset]
     
-    init(sections: [Section], typeSection: TypeSection) {
+    init(sections: [Section],
+         typeSection: TypeSection,
+         importSection: ImportSeciton) {
         var totalCount = 0
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
-            indexOffsets[section.binary!.filename] = totalCount
+            indexOffsets[section.binary!.filename] = totalCount + importSection.count
             totalCount += section.count!
         }
         self.count = totalCount

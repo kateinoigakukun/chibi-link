@@ -43,7 +43,6 @@ struct DataSection: VectorSection {
             let inputName = info.name
             let outputName = getOutputSegmentName(inputName)
             let outSegment: OutputSegment
-            // FIXME: Merge .data and other prefix names
             if let existing = segmentMap[outputName] {
                 outSegment = existing
             } else {

@@ -21,12 +21,14 @@ class OutputWriter {
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
         let importSection = ImportSeciton(symbolTable: symbolTable)
         let funcSection = FunctionSection(
-            sections: sectionsMap[.function] ?? [], typeSection: typeSection
+            sections: sectionsMap[.function] ?? [],
+            typeSection: typeSection, importSection: importSection
         )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
+            importSection: importSection,
             funcSection: funcSection, dataSection: dataSection
         )
 
