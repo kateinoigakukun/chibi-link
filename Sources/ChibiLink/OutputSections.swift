@@ -80,7 +80,7 @@ struct DataSection: VectorSection {
         for section in sections {
             totalCount += section.dataSegments.count
         }
-        self.count = 0//totalCount
+        self.count = totalCount
         self.sections = sections
     }
 
