@@ -4,7 +4,7 @@ class DataSegment {
     var data: ArraySlice<UInt8>!
     var size: Size!
     var info: Info!
-    
+
     struct Info {
         let name: String
         let alignment: Int
@@ -148,7 +148,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
     var currentSection: Section!
     var currentRelocSection: Section!
     var dataSection: Section!
-    
+
     let binary: InputBinary
     let symbolTable: SymbolTable
     init(binary: InputBinary, symbolTable: SymbolTable) {
@@ -180,7 +180,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         )
         binary.sections.append(section)
         currentSection = section
-        
+
         if sectionCode == .data {
             dataSection = section
         }
@@ -268,7 +268,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentRelocSection.relocations.append(reloc)
     }
 
-    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+    func onFunctionSymbol(_: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: FunctionSymbol.Target
         if let name = name {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
@@ -277,9 +277,9 @@ class LinkInfoCollector: BinaryReaderDelegate {
         }
         let symbol = symbolTable.addFunctionSymbol(target, flags: SymbolFlags(rawValue: flags))
         binary.symbols.append(.function(symbol))
-        
     }
-    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+
+    func onGlobalSymbol(_: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: GlobalSymbol.Target
         if let name = name {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
@@ -289,8 +289,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
         let symbol = symbolTable.addGlobalSymbol(target, flags: SymbolFlags(rawValue: flags))
         binary.symbols.append(.global(symbol))
     }
-    func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String,
-                      _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
+
+    func onDataSymbol(_: Index, _ flags: UInt32, _ name: String,
+                      _ content: (segmentIndex: Index, offset: Offset, size: Size)?)
+    {
         let target: DataSymbol.Target
         if let content = content {
             let segment = dataSection.dataSegments[content.segmentIndex]
@@ -307,7 +309,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         let symbol = symbolTable.addDataSymbol(target, flags: SymbolFlags(rawValue: flags))
         binary.symbols.append(.data(symbol))
     }
-    
+
     func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
         let info = DataSegment.Info(name: name, alignment: alignment, flags: flags)
         dataSection.dataSegments[index].info = info

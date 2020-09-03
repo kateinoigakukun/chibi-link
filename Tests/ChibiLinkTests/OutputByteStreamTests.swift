@@ -1,9 +1,7 @@
-import XCTest
 @testable import ChibiLink
-
+import XCTest
 
 class OutputByteStreamTests: XCTestCase {
-    
     func testWriteAt() throws {
         let (file, _) = makeTemporaryFile()
         do {

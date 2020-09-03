@@ -49,13 +49,12 @@ func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
     return InputBinary(filename: filename, data: bytes)
 }
 
-
 class InMemoryOutputByteStream: OutputByteStream {
     private(set) var bytes: [UInt8] = []
     private(set) var currentOffset: Offset = 0
 
-    func write(_ bytes: Array<UInt8>, at offset: Offset) throws {
-        for index in offset..<(offset+bytes.count) {
+    func write(_ bytes: [UInt8], at offset: Offset) throws {
+        for index in offset ..< (offset + bytes.count) {
             self.bytes[index] = bytes[index - offset]
         }
     }
@@ -66,7 +65,7 @@ class InMemoryOutputByteStream: OutputByteStream {
     }
 
     func writeString(_ value: String) throws {
-        self.bytes.append(contentsOf: value.utf8)
+        bytes.append(contentsOf: value.utf8)
         currentOffset += value.utf8.count
     }
 }

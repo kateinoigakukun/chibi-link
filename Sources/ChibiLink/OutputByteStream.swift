@@ -10,15 +10,15 @@ protocol OutputByteStream {
     /// Write `bytes` at `currentOffset` and move the current offset
     func write(_ bytes: ArraySlice<UInt8>) throws
     /// Write `bytes` at `currentOffset` and move the current offset
-    func write(_ bytes: Array<UInt8>) throws
+    func write(_ bytes: [UInt8]) throws
     /// Write `value` as UTF-8 bytes at `currentOffset` and move the current offset
     func writeString(_ value: String) throws
     /// Write `bytes` at `offset`. Doesn't move current offset
-    func write(_ bytes: Array<UInt8>, at offset: Offset) throws
+    func write(_ bytes: [UInt8], at offset: Offset) throws
 }
 
 extension OutputByteStream {
-    func write(_ bytes: Array<UInt8>) throws {
+    func write(_ bytes: [UInt8]) throws {
         try write(bytes[...])
     }
 }
@@ -29,20 +29,21 @@ class FileOutputByteStream: OutputByteStream {
     convenience init(path: String) {
         self.init(filePointer: fopen(path, "wb"))
     }
+
     init(filePointer: UnsafeMutablePointer<FILE>) {
         self.filePointer = filePointer
     }
 
     deinit { fclose(filePointer) }
 
-    func write(_ bytes: Array<UInt8>, at offset: Offset) throws {
-        let original = self.currentOffset
+    func write(_ bytes: [UInt8], at offset: Offset) throws {
+        let original = currentOffset
         fseek(filePointer, offset, SEEK_SET)
         try write(bytes)
         fseek(filePointer, original, SEEK_SET)
         currentOffset -= bytes.count
     }
-    
+
     private func _write(_ ptr: UnsafeRawPointer, length: Int) throws {
         while true {
             let n = fwrite(ptr, 1, length, filePointer)
@@ -56,6 +57,7 @@ class FileOutputByteStream: OutputByteStream {
         }
         currentOffset += length
     }
+
     func write(_ bytes: ArraySlice<UInt8>) throws {
         try bytes.withUnsafeBytes { bytesPtr in
             try _write(bytesPtr.baseAddress!, length: bytesPtr.count)
@@ -64,7 +66,7 @@ class FileOutputByteStream: OutputByteStream {
 
     func writeString(_ value: String) throws {
         var value = value
-        try value.withUTF8 { (bufferPtr) in
+        try value.withUTF8 { bufferPtr in
             try _write(bufferPtr.baseAddress!, length: bufferPtr.count)
         }
     }

@@ -14,7 +14,7 @@ extension OutputSection {
     func write(writer: BinaryWriter) throws {
         try writer.writeSectionCode(section)
         switch size {
-        case .fixed(let size):
+        case let .fixed(size):
             try writer.writeULEB128(UInt32(size))
             try writeContent(writer: writer)
         case .unknown:
@@ -62,12 +62,11 @@ struct TypeSection: VectorSection {
         }
         let lengthBytes = encodeULEB128(UInt32(totalSize))
         totalSize += lengthBytes.count
-        self.size = .fixed(totalSize)
-        self.count = totalCount
+        size = .fixed(totalSize)
+        count = totalCount
         self.sections = sections
     }
 }
-
 
 class OutputSegment {
     let name: String
@@ -94,7 +93,7 @@ struct DataSection: VectorSection {
     var section: BinarySection { .data }
     var size: OutputSectionSize { .unknown }
     let count: Size
-    
+
     private let segments: [OutputSegment]
 
     init(sections: [Section]) {
@@ -113,8 +112,8 @@ struct DataSection: VectorSection {
             outSegment.addInput(segment)
             totalCount += 1
         }
-        self.count = totalCount
-        self.segments = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
+        count = totalCount
+        segments = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
     }
 
     func writeVectorContent(writer: BinaryWriter) throws {
@@ -135,7 +134,6 @@ func align(_ value: Int, to align: Int) -> Int {
 }
 
 struct ImportSeciton: VectorSection {
-
     struct Import {
         let kind: Kind
         let module: String
@@ -145,13 +143,13 @@ struct ImportSeciton: VectorSection {
             case global(type: ValueType, mutable: Bool)
         }
     }
-    
+
     var section: BinarySection { .import }
     var size: OutputSectionSize { .unknown }
     var count: Int { imports.count }
 
     private(set) var imports: [Import] = []
-    
+
     mutating func addImport(_ import: Import) {
         imports.append(`import`)
     }
@@ -169,8 +167,8 @@ struct ImportSeciton: VectorSection {
         }
         for symbol in symbolTable.symbols() {
             switch symbol {
-            case .function(let symbol): addImport(symbol)
-            case .global(let symbol): addImport(symbol)
+            case let .function(symbol): addImport(symbol)
+            case let .global(symbol): addImport(symbol)
             case .data:
                 // We don't generate imports for data symbols.
                 continue
@@ -183,7 +181,7 @@ func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtoc
     typealias Import = ImportSeciton.Import
     switch symbol.target {
     case .defined: return nil
-    case .undefined(let undefined as FunctionImport):
+    case let .undefined(undefined as FunctionImport):
         let signature = undefined.signatureIdx
             + undefined.selfBinary!.relocOffsets!.typeIndexOffset
         let kind = Import.Kind.function(signature: signature)
@@ -192,7 +190,7 @@ func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtoc
             module: undefined.module,
             field: undefined.name
         )
-    case .undefined(let undefined as GlobalImport):
+    case let .undefined(undefined as GlobalImport):
         let kind = Import.Kind.global(type: undefined.type, mutable: undefined.mutable)
         return Import(
             kind: kind,

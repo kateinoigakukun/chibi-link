@@ -4,14 +4,13 @@ class Linker {
     func append(_ binary: InputBinary) {
         inputs.append(binary)
     }
-    
+
     struct ExportInfo {
         let export: Export
         let binary: InputBinary
     }
 
     func resolveSymbols() {
-        
         var exportList: [ExportInfo] = []
         var exportIndexMap: [String: Int] = [:]
         for binary in inputs {
@@ -23,7 +22,7 @@ class Linker {
                 exportIndexMap[export.name] = exportList.count - 1
             }
         }
-        
+
         for binary in inputs {
             for funcImport in binary.funcImports {
                 guard let exportIndex = exportIndexMap[funcImport.field] else {
@@ -45,7 +44,7 @@ class Linker {
         var tableElementCount: Int = 0
         var totalFunctionImports: Int = 0
         var totalGlobalImports: Int = 0
-        
+
         typealias PartialOffsetSet = (
             importedFunctionIndexOffset: Offset,
             importedGlobalindexOffset: Offset,

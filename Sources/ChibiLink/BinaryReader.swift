@@ -41,7 +41,7 @@ protocol BinaryReaderDelegate {
                  _ index: Index, _ addend: UInt32)
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
-    
+
 //    func onSymbolCount(_ count: Int)
 //    func onSymbol(_ index: Index, _ type: SymbolType, _ flags: UInt32)
     func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
@@ -426,12 +426,12 @@ class BinaryReader {
             delegate.onReloc(type, offset, index, addend)
         }
     }
-    
+
     func readLinkingSection(sectionSize _: Size) throws {
         // BeginLinkingSection
         let version = readU32Leb128()
         assert(version == 2)
-        while (state.offset < sectionEnd) {
+        while state.offset < sectionEnd {
             let linkingTypeCode = readU8Fixed()
             let linkingType = LinkingEntryType(rawValue: linkingTypeCode)
             let subSectionSize = readOffset()
@@ -452,16 +452,16 @@ class BinaryReader {
             }
         }
     }
-    
+
     func readSymbolTable() {
         let count = Int(readU32Leb128())
 //                delegate.onSymbolCount(count)
-        for i in 0..<count {
+        for i in 0 ..< count {
             let symTypeCode = readU8Fixed()
             let symFlags = readU32Leb128()
             let symType = SymbolType(rawValue: symTypeCode)!
 //                    delegate.onSymbol(i, symType, symFlags)
-            
+
             switch symType {
             case .function, .global:
                 let itemIndex = Index(readU32Leb128())
@@ -469,7 +469,7 @@ class BinaryReader {
                 if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
                     name = readString()
                 }
-                if (symType == .function) {
+                if symType == .function {
                     delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
                 } else {
                     delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
@@ -488,10 +488,10 @@ class BinaryReader {
             }
         }
     }
-    
+
     func readSegmentInfo() {
         let count = Int(readU32Leb128())
-        for i in 0..<count {
+        for i in 0 ..< count {
             let name = readString()
             let alignment = readU32Leb128()
             let flags = readU32Leb128()

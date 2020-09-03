@@ -27,6 +27,7 @@ struct IndexableTarget: DefinedTarget {
 extension FunctionImport: UndefinedTarget {
     var name: String { field }
 }
+
 extension GlobalImport: UndefinedTarget {
     var name: String { field }
 }
@@ -34,11 +35,11 @@ extension GlobalImport: UndefinedTarget {
 enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget> {
     case defined(Target)
     case undefined(Import)
-    
+
     var name: String {
         switch self {
-        case .defined(let target): return target.name
-        case .undefined(let target): return target.name
+        case let .defined(target): return target.name
+        case let .undefined(target): return target.name
         }
     }
 }
@@ -65,7 +66,7 @@ final class GlobalSymbol: SymbolProtocol {
     typealias Target = SymbolTarget<IndexableTarget, GlobalImport>
     fileprivate(set) var target: Target
     let flags: SymbolFlags
-    
+
     fileprivate init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
@@ -78,15 +79,17 @@ final class DataSymbol: SymbolProtocol {
         let binary: InputBinary
         let segment: DataSegment
     }
+
     struct UndefinedSegment: UndefinedTarget {
         let name: String
         let module: String = "env"
     }
+
     typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment>
-    
+
     fileprivate(set) var target: Target
     let flags: SymbolFlags
-    
+
     fileprivate init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
@@ -100,26 +103,26 @@ enum Symbol {
 
     var name: String {
         switch self {
-        case .function(let symbol):
+        case let .function(symbol):
             return symbol.target.name
-        case .data(let symbol):
+        case let .data(symbol):
             return symbol.target.name
-        case .global(let symbol):
+        case let .global(symbol):
             return symbol.target.name
         }
     }
-    
+
     var isUndefined: Bool {
         func isUndef<T, U>(_ target: SymbolTarget<T, U>) -> Bool {
             guard case .undefined = target else { return false }
             return true
         }
         switch self {
-        case .function(let symbol):
+        case let .function(symbol):
             return isUndef(symbol.target)
-        case .data(let symbol):
+        case let .data(symbol):
             return isUndef(symbol.target)
-        case .global(let symbol):
+        case let .global(symbol):
             return isUndef(symbol.target)
         }
     }
@@ -127,13 +130,14 @@ enum Symbol {
 
 class SymbolTable {
     private var symbolMap: [String: Symbol] = [:]
-    
+
     func symbols() -> [Symbol] {
         Array(symbolMap.values)
     }
 
     func addFunctionSymbol(_ target: FunctionSymbol.Target,
-                           flags: SymbolFlags) -> FunctionSymbol {
+                           flags: SymbolFlags) -> FunctionSymbol
+    {
         guard let existing = symbolMap[target.name] else {
             let newSymbol = FunctionSymbol(target: target, flags: flags)
             symbolMap[target.name] = .function(newSymbol)
@@ -162,7 +166,8 @@ class SymbolTable {
     }
 
     func addGlobalSymbol(_ target: GlobalSymbol.Target,
-                         flags: SymbolFlags) -> GlobalSymbol {
+                         flags: SymbolFlags) -> GlobalSymbol
+    {
         guard let existing = symbolMap[target.name] else {
             let newSymbol = GlobalSymbol(target: target, flags: flags)
             symbolMap[target.name] = .global(newSymbol)
@@ -189,9 +194,10 @@ class SymbolTable {
             """)
         }
     }
-    
+
     func addDataSymbol(_ target: DataSymbol.Target,
-                       flags: SymbolFlags) -> DataSymbol {
+                       flags: SymbolFlags) -> DataSymbol
+    {
         guard let existing = symbolMap[target.name] else {
             let newSymbol = DataSymbol(target: target, flags: flags)
             symbolMap[target.name] = .data(newSymbol)

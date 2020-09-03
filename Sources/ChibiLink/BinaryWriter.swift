@@ -24,22 +24,29 @@ class BinaryWriter {
         let bytes = encodeULEB128(UInt32(value), padTo: LEB128.maxLength)
         try stream.write(bytes, at: placeholder.offset)
     }
+
     func writeIndex(_ index: Index) throws {
         try writeULEB128(UInt32(index))
     }
+
     func writeFixedUInt8(_ value: UInt8) throws {
         try stream.write([value])
     }
+
     func writeULEB128<T>(_ value: T) throws
-        where T: UnsignedInteger, T: FixedWidthInteger {
+        where T: UnsignedInteger, T: FixedWidthInteger
+    {
         let bytes = encodeULEB128(value)
         try stream.write(bytes)
     }
+
     func writeSLEB128<T>(_ value: T) throws
-        where T: SignedInteger, T: FixedWidthInteger {
+        where T: SignedInteger, T: FixedWidthInteger
+    {
         let bytes = encodeSLEB128(value)
         try stream.write(bytes)
     }
+
     func writeString(_ value: String) throws {
         let lengthBytes = encodeULEB128(UInt32(value.count))
         try stream.write(lengthBytes)
@@ -75,14 +82,14 @@ class BinaryWriter {
             try writeFixedUInt8(mutable ? 0 : 1)
         }
     }
-    
+
     enum InitExpr {
         case i32(Int32)
     }
-    
+
     func writeI32InitExpr(_ expr: InitExpr) throws {
         switch expr {
-        case .i32(let value):
+        case let .i32(value):
             try writeFixedUInt8(ConstOpcode.i32Const.rawValue)
             try writeSLEB128(value)
             try writeFixedUInt8(Opcode.end.rawValue)
@@ -98,15 +105,15 @@ class BinaryWriter {
         for chunk in segment.chunks {
             let written = stream.currentOffset - base
             let padding = chunk.offset - written
-            let paddingBytes = Array<UInt8>(repeating: 0, count: padding)
+            let paddingBytes = [UInt8](repeating: 0, count: padding)
             try stream.write(paddingBytes)
             try stream.write(chunk.segment.data)
         }
     }
-    
+
     func writeSectionPayload(_ section: Section) throws {
         let offset = section.payloadOffset!
-        let bytes = section.binary!.data[offset..<offset + section.payloadSize!]
+        let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
         try stream.write(bytes)
     }
 }
@@ -117,8 +124,9 @@ class OutputWriter {
     let inputs: [InputBinary]
     init(stream: OutputByteStream,
          symbolTable: SymbolTable,
-         inputs: [InputBinary]) {
-        self.writer = BinaryWriter(stream: stream)
+         inputs: [InputBinary])
+    {
+        writer = BinaryWriter(stream: stream)
         self.symbolTable = symbolTable
         self.inputs = inputs
     }

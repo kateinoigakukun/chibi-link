@@ -23,16 +23,13 @@ class NopDelegate: BinaryReaderDelegate {
     func onDataSegmentData(_: Int, _: ArraySlice<UInt8>, _: Int) {}
     func onRelocCount(_: Int, _: Int) {}
     func onReloc(_: RelocType, _: Offset, _: Index, _: UInt32) {}
-    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
-    }
-    
-    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
-    }
-    
-    func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String, _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
-    }
-    
-    func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {}
+    func onFunctionSymbol(_: Index, _: UInt32, _: String?, _: Index) {}
+
+    func onGlobalSymbol(_: Index, _: UInt32, _: String?, _: Index) {}
+
+    func onDataSymbol(_: Index, _: UInt32, _: String, _: (segmentIndex: Index, offset: Offset, size: Size)?) {}
+
+    func onSegmentInfo(_: Index, _: String, _: Int, _: UInt32) {}
 }
 
 func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {
@@ -154,7 +151,7 @@ class BinaryReaderTests: XCTestCase {
         }
         try testRead(RelocDelegate(), options: ["-r"], content)
     }
-    
+
     func testSegmentInfo() throws {
         class Delegate: NopDelegate {
             typealias Info = (
@@ -174,7 +171,7 @@ class BinaryReaderTests: XCTestCase {
         @bar = hidden constant i32 42, section "MyAwesomeSection", align 4
         @baz = hidden global i32 7, section "AnotherGreatSection", align 4
         """
-        
+
         let output = compileLLVMIR(content)
         let bytes = try Array(Data(contentsOf: output))
         let delegate = Delegate()

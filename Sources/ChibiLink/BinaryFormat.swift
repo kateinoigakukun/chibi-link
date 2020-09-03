@@ -75,16 +75,16 @@ struct Limits {
 }
 
 enum LinkingEntryType: UInt8 {
-  case segmentInfo = 5
-  case initFunctions = 6
-  case comdatInfo = 7
-  case symbolTable = 8
+    case segmentInfo = 5
+    case initFunctions = 6
+    case comdatInfo = 7
+    case symbolTable = 8
 }
 
 enum SymbolType: UInt8 {
-  case function = 0
-  case data = 1
-  case global = 2
+    case function = 0
+    case data = 1
+    case global = 2
 }
 
 let SYMBOL_FLAG_UNDEFINED: UInt32 = 0x10
