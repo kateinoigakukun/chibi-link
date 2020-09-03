@@ -5,10 +5,11 @@ import XCTest
 func testLink(_ contents: [String: String]) throws -> URL {
     let linker = Linker()
     var inputs: [InputBinary] = []
+    let symtab = SymbolTable()
     for (filename, content) in contents {
         let relocatable = compileWat(content, options: ["-r"])
         let binary = createInputBinary(relocatable, filename: filename)
-        let collector = LinkInfoCollector(binary: binary)
+        let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: binary.data, delegate: collector)
         try reader.readModule()
         linker.append(binary)

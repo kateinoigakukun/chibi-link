@@ -4,7 +4,8 @@ import XCTest
 func testCollect(_ content: String, options: [String] = []) throws -> (InputBinary, URL) {
     let module = compileWat(content, options: options)
     let binary = createInputBinary(module)
-    let collector = LinkInfoCollector(binary: binary)
+    let symtab = SymbolTable()
+    let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
     let reader = BinaryReader(bytes: binary.data, delegate: collector)
     try reader.readModule()
     return (binary, module)

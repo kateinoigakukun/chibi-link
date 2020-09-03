@@ -103,10 +103,11 @@ class Linker {
 
 func performLinker(_ filenames: [String]) throws {
     let linker = Linker()
+    let symtab = SymbolTable()
     for filename in filenames {
         let bytes = try readFileContents(filename)
         let binary = InputBinary(filename: filename, data: bytes)
-        let collector = LinkInfoCollector(binary: binary)
+        let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: bytes, delegate: collector)
         try reader.readModule()
         linker.append(binary)

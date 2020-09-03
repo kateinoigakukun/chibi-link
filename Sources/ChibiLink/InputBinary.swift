@@ -104,6 +104,7 @@ class InputBinary {
     fileprivate(set) var tableElemSize: Size = 0
 
     fileprivate(set) var debugNames: [String] = []
+    fileprivate(set) var symbols: [Symbol] = []
 
     struct RelocOffsets {
         var importedFunctionIndexOffset: Offset
@@ -138,9 +139,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
     var currentSection: Section!
     var currentRelocSection: Section!
     let binary: InputBinary
-    let symbolTable = SymbolTable()
-    init(binary: InputBinary) {
+    let symbolTable: SymbolTable
+    init(binary: InputBinary, symbolTable: SymbolTable) {
         self.binary = binary
+        self.symbolTable = symbolTable
     }
 
     func setState(_ state: BinaryReader.State) {
@@ -253,41 +255,41 @@ class LinkInfoCollector: BinaryReaderDelegate {
     func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: FunctionSymbol.Target
         if let name = name {
-            target = .defined((itemIndex: itemIndex, name: name, binary))
+            target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.funcImports[itemIndex])
         }
-        let sym = FunctionSymbol(
-            target: target,
-            flags: SymbolFlags(rawValue: flags)
-        )
-        symbolTable.addFunctionSymbol(sym)
+        let symbol = symbolTable.addFunctionSymbol(target, flags: SymbolFlags(rawValue: flags))
+        binary.symbols.append(.function(symbol))
+        
     }
     func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: GlobalSymbol.Target
         if let name = name {
-            target = .defined((itemIndex: itemIndex, name: name, binary))
+            target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.globalImports[itemIndex])
         }
-        let sym = GlobalSymbol(
-            target: target,
-            flags: SymbolFlags(rawValue: flags)
-        )
-        symbolTable.addGlobalSymbol(sym)
+        let symbol = symbolTable.addGlobalSymbol(target, flags: SymbolFlags(rawValue: flags))
+        binary.symbols.append(.global(symbol))
     }
     func onDataSymbol(_ index: Index, _ flags: UInt32, _ name: String,
                       _ content: (segmentIndex: Index, offset: Offset, size: Size)?) {
         let target: DataSymbol.Target
         if let content = content {
-            target = .defined(content)
+            target = .defined(
+                DataSymbol.DefinedSegment(
+                    segmentIndex: content.segmentIndex,
+                    name: name,
+                    offset: content.offset,
+                    size: content.size,
+                    binary: binary
+                )
+            )
         } else {
-            target = .undefined(name)
+            target = .undefined(DataSymbol.UndefinedSegment(name: name))
         }
-        let sym = DataSymbol(
-            target: target,
-            flags: SymbolFlags(rawValue: flags)
-        )
-        symbolTable.addDataSymbol(sym)
+        let symbol = symbolTable.addDataSymbol(target, flags: SymbolFlags(rawValue: flags))
+        binary.symbols.append(.data(symbol))
     }
 }
