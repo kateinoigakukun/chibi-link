@@ -19,9 +19,10 @@ func testLink(_ contents: [String: String]) throws -> URL {
     linker.link()
     let (output, handle) = makeTemporaryFile()
     try! handle.close()
-    let stream = OutputByteStream(path: output.path)
+    let stream = InMemoryOutputByteStream()
     let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs)
     try writer.writeBinary()
+    try Data(stream.bytes).write(to: output)
     return output
 }
 

@@ -4,7 +4,26 @@
     import Glibc
 #endif
 
-class OutputByteStream {
+protocol OutputByteStream {
+    /// The head offset that the stream is writing at.
+    var currentOffset: Offset { get }
+    /// Write `bytes` at `currentOffset` and move the current offset
+    func write(_ bytes: ArraySlice<UInt8>) throws
+    /// Write `bytes` at `currentOffset` and move the current offset
+    func write(_ bytes: Array<UInt8>) throws
+    /// Write `value` as UTF-8 bytes at `currentOffset` and move the current offset
+    func writeString(_ value: String) throws
+    /// Write `bytes` at `offset`. Doesn't move current offset
+    func write(_ bytes: Array<UInt8>, at offset: Offset) throws
+}
+
+extension OutputByteStream {
+    func write(_ bytes: Array<UInt8>) throws {
+        try write(bytes[...])
+    }
+}
+
+class FileOutputByteStream: OutputByteStream {
     private let filePointer: UnsafeMutablePointer<FILE>
     private(set) var currentOffset: Offset = 0
     convenience init(path: String) {
@@ -21,10 +40,7 @@ class OutputByteStream {
         fseek(filePointer, offset, SEEK_SET)
         try write(bytes)
         fseek(filePointer, original, SEEK_SET)
-    }
-
-    func write(_ bytes: Array<UInt8>) throws {
-        try write(bytes[...])
+        currentOffset -= bytes.count
     }
     
     private func _write(_ ptr: UnsafeRawPointer, length: Int) throws {

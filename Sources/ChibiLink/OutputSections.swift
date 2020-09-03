@@ -68,6 +68,29 @@ struct TypeSection: VectorSection {
     }
 }
 
+struct DataSection: VectorSection {
+    var section: BinarySection { .data }
+    var size: OutputSectionSize { .unknown }
+    let count: Size
+    
+    private let sections: [Section]
+    
+    init(sections: [Section]) {
+        var totalCount: Int = 0
+        for section in sections {
+            totalCount += section.dataSegments.count
+        }
+        self.count = 0//totalCount
+        self.sections = sections
+    }
+
+    func writeVectorContent(writer: BinaryWriter) throws {
+        for segment in sections.lazy.flatMap(\.dataSegments) {
+            try writer.writeDataSegment(segment)
+        }
+    }
+}
+
 struct ImportSeciton: VectorSection {
 
     struct Import {

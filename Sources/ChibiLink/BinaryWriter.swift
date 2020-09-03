@@ -24,6 +24,9 @@ class BinaryWriter {
         let bytes = encodeULEB128(UInt32(value), padTo: LEB128.maxLength)
         try stream.write(bytes, at: placeholder.offset)
     }
+    func writeIndex(_ index: Index) throws {
+        try writeULEB128(UInt32(index))
+    }
     func writeFixedUInt8(_ value: UInt8) throws {
         try stream.write([value])
     }
@@ -32,10 +35,20 @@ class BinaryWriter {
         let bytes = encodeULEB128(value)
         try stream.write(bytes)
     }
+    func writeSLEB128<T>(_ value: T) throws
+        where T: SignedInteger, T: FixedWidthInteger {
+        let bytes = encodeSLEB128(value)
+        try stream.write(bytes)
+    }
     func writeString(_ value: String) throws {
         let lengthBytes = encodeULEB128(UInt32(value.count))
         try stream.write(lengthBytes)
         try stream.writeString(value)
+    }
+
+    func writeBytes(_ bytes: ArraySlice<UInt8>) throws {
+        try writeULEB128(UInt32(bytes.count))
+        try stream.write(bytes)
     }
 
     // MARK: - Wasm binary format writers
@@ -47,13 +60,6 @@ class BinaryWriter {
 
     func writeSectionCode(_ code: BinarySection) throws {
         try writeFixedUInt8(code.rawValue)
-    }
-
-    func writeFunctionImport(_ funcImport: FunctionImport, typeIndexOffset: Offset) throws {
-        try writeString(funcImport.module)
-        try writeString(funcImport.field)
-        try writeFixedUInt8(ExternalKind.func.rawValue)
-        try writeULEB128(UInt32(funcImport.signatureIdx + typeIndexOffset))
     }
 
     func writeImport(_ theImport: ImportSeciton.Import) throws {
@@ -68,6 +74,26 @@ class BinaryWriter {
             try writeFixedUInt8(type.rawValue)
             try writeFixedUInt8(mutable ? 0 : 1)
         }
+    }
+    
+    enum InitExpr {
+        case i32(Int32)
+    }
+    
+    func writeI32InitExpr(_ expr: InitExpr) throws {
+        switch expr {
+        case .i32(let value):
+            try writeFixedUInt8(ConstOpcode.i32Const.rawValue)
+            try writeSLEB128(value)
+            try writeFixedUInt8(Opcode.end.rawValue)
+        }
+    }
+
+    func writeDataSegment(_ segment: DataSegment) throws {
+        try writeIndex(segment.memoryIndex)
+        // TODO: i64?
+        try writeI32InitExpr(.i32(Int32(segment.offset)))
+        try writeBytes(segment.data)
     }
     
     func writeSectionPayload(_ section: Section) throws {
@@ -102,5 +128,7 @@ class OutputWriter {
         try importSection.write(writer: writer)
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
         try typeSection.write(writer: writer)
+        let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+        try dataSection.write(writer: writer)
     }
 }
