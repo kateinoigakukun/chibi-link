@@ -171,7 +171,10 @@ class SymbolTable {
             return existingFn
         case (.undefined, .undefined), (.defined, .undefined):
             return existingFn
+        case (.defined, .defined) where flags.isWeak:
+            return existingFn
         case let (.defined(existing), .defined(newTarget)):
+            if flags.isWeak { return existingFn }
             fatalError("""
                 Error: symbol conflict: \(existing.name)
                 >>> defined in \(newTarget.binary.filename)
@@ -200,6 +203,8 @@ class SymbolTable {
             existingGlobal.target = .defined(newTarget)
             return existingGlobal
         case (.undefined, .undefined), (.defined, .undefined):
+            return existingGlobal
+        case (.defined, .defined) where flags.isWeak:
             return existingGlobal
         case let (.defined(existing), .defined(newTarget)):
             fatalError("""
@@ -230,6 +235,8 @@ class SymbolTable {
             existingData.target = .defined(newTarget)
             return existingData
         case (.undefined, .undefined), (.defined, .undefined):
+            return existingData
+        case (.defined, .defined) where flags.isWeak:
             return existingData
         case let (.defined(existing), .defined(newTarget)):
             fatalError("""
