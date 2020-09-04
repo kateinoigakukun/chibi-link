@@ -2,7 +2,7 @@
 import XCTest
 
 @discardableResult
-func testSections(_ contents: [String: Input]) throws -> [BinarySection: [Section]] {
+func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputSection] {
     let linker = Linker()
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
@@ -21,7 +21,29 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: [Sectio
     for sec in inputs.lazy.flatMap(\.sections) {
         sectionsMap[sec.sectionCode, default: []].append(sec)
     }
-    return sectionsMap
+    let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
+    let importSection = ImportSeciton(symbolTable: symtab)
+    let funcSection = FunctionSection(
+        sections: sectionsMap[.function] ?? [],
+        typeSection: typeSection, importSection: importSection
+    )
+    let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+    let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
+    let tableSection = TableSection(inputs: inputs)
+    let memorySection = MemorySection(dataSection: dataSection)
+    let elemSection = ElementSection(
+        sections: sectionsMap[.elem] ?? [], funcSection: funcSection
+    )
+    return [
+        .type: typeSection,
+        .import: importSection,
+        .function: funcSection,
+        .data: dataSection,
+        .code: codeSection,
+        .table: tableSection,
+        .memory: memorySection,
+        .elem: elemSection,
+    ]
 }
 
 class OutputSectionsTests: XCTestCase {
@@ -47,8 +69,7 @@ class OutputSectionsTests: XCTestCase {
             @external_ref2 = global i8** @bye_str, section "another_sec", align 4
             """),
         ])
-        let dataSections = sections[.data]!
-        let outSection = DataSection(sections: dataSections)
+        let outSection = sections[.data]! as! DataSection
         XCTAssertEqual(outSection.count, 2)
         XCTAssertEqual(outSection.count, outSection.segments.count)
 
@@ -61,5 +82,34 @@ class OutputSectionsTests: XCTestCase {
         XCTAssertEqual(dataSeg.name, ".data")
         XCTAssertEqual(dataSeg.chunks.count, 5)
         XCTAssertEqual(dataSeg.chunks.flatMap(\.relocs).count, 1)
+    }
+
+    func testElementSection() throws {
+        let sections = try testSections([
+            "main.ll": .llvm("""
+            target triple = "wasm32-unknown-unknown"
+
+            @indirect_func = local_unnamed_addr global i32 ()* @foo, align 4
+
+            define i32 @foo() #0 {
+            entry:
+              ret i32 2
+            }
+
+            define void @_start() local_unnamed_addr #1 {
+            entry:
+              %0 = load i32 ()*, i32 ()** @indirect_func, align 4
+              %call = call i32 %0() #2
+              ret void
+            }
+
+            define void @call_ptr(i64 (i64)* %arg) {
+              %1 = call i64 %arg(i64 1)
+              ret void
+            }
+            """),
+        ])
+        let outSection = sections[.elem]! as! ElementSection
+        XCTAssertEqual(outSection.elementCount, 1)
     }
 }

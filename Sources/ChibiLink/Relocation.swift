@@ -19,16 +19,18 @@ class Relocator {
     let typeSection: TypeSection
     let importSection: ImportSeciton
     let funcSection: FunctionSection
+    let elemSection: ElementSection
     let dataSection: DataSection
 
     init(symbolTable: SymbolTable, typeSection: TypeSection,
-         importSection: ImportSeciton,
-         funcSection: FunctionSection, dataSection: DataSection)
+         importSection: ImportSeciton, funcSection: FunctionSection,
+         elemSection: ElementSection, dataSection: DataSection)
     {
         self.symbolTable = symbolTable
         self.typeSection = typeSection
         self.importSection = importSection
         self.funcSection = funcSection
+        self.elemSection = elemSection
         self.dataSection = dataSection
     }
 

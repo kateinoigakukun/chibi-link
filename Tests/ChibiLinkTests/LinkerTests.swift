@@ -153,4 +153,36 @@ class LinkerTests: XCTestCase {
         try Data(bytes).write(to: output)
         try reader.readModule()
     }
+
+    func testRelocElem() throws {
+        let bytes = try testLink([
+            "main.ll": .llvm("""
+            target triple = "wasm32-unknown-unknown"
+
+            @indirect_func = local_unnamed_addr global i32 ()* @foo, align 4
+
+            define i32 @foo() #0 {
+            entry:
+              ret i32 2
+            }
+
+            define void @_start() local_unnamed_addr #1 {
+            entry:
+              %0 = load i32 ()*, i32 ()** @indirect_func, align 4
+              %call = call i32 %0() #2
+              ret void
+            }
+
+            define void @call_ptr(i64 (i64)* %arg) {
+              %1 = call i64 %arg(i64 1)
+              ret void
+            }
+            """),
+        ])
+        let reader = BinaryReader(bytes: bytes, delegate: NopDelegate())
+        let (output, _) = makeTemporaryFile()
+        print(output)
+        try Data(bytes).write(to: output)
+        try reader.readModule()
+    }
 }
