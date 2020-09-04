@@ -126,6 +126,17 @@ enum Symbol {
             return isUndef(symbol.target)
         }
     }
+
+    var flags: SymbolFlags {
+        switch self {
+        case let .function(symbol):
+            return symbol.flags
+        case let .data(symbol):
+            return symbol.flags
+        case let .global(symbol):
+            return symbol.flags
+        }
+    }
 }
 
 class SymbolTable {

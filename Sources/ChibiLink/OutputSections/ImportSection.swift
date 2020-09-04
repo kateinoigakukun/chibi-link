@@ -62,7 +62,7 @@ private func uniqueImportKey(module: String, field: String) -> String {
     module + "." + field
 }
 
-func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtocol {
+private func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtocol {
     typealias Import = ImportSeciton.Import
     switch symbol.target {
     case .defined: return nil

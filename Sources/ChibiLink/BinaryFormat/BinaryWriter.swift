@@ -82,6 +82,21 @@ class BinaryWriter {
         }
     }
 
+    func writeExport(_ theExport: ExportSection.Export) throws {
+        try writeString(theExport.name)
+        switch theExport.kind {
+        case let .function(index):
+            try writeFixedUInt8(ExternalKind.func.rawValue)
+            try writeULEB128(UInt32(index))
+        case let .global(index):
+            try writeFixedUInt8(ExternalKind.global.rawValue)
+            try writeULEB128(UInt32(index))
+        case let .memory(index):
+            try writeFixedUInt8(ExternalKind.memory.rawValue)
+            try writeULEB128(UInt32(index))
+        }
+    }
+
     enum InitExpr {
         case i32(Int32)
     }

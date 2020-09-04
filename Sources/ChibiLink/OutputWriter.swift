@@ -27,6 +27,12 @@ class OutputWriter {
         let globalSection = GlobalSection(
             sections: sectionsMap[.global] ?? [], importSection: importSection
         )
+        let exportSection = ExportSection(
+            symbolTable: symbolTable,
+            funcSection: funcSection,
+            globalSection: globalSection
+        )
+        exportSection.addExport(ExportSection.Export(kind: .memory(0), name: "memory"))
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
         let tableSection = TableSection(inputs: inputs)
@@ -52,6 +58,7 @@ class OutputWriter {
         try writeSection(tableSection)
         try writeSection(memorySection)
         try writeSection(globalSection)
+        try writeSection(exportSection)
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)
