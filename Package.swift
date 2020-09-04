@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "Tools",
+    name: "ChibiLink",
     products: [
         .executable(name: "strip-debug", targets: ["strip-debug"]),
         .executable(name: "chibi-link", targets: ["chibi-link"]),

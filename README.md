@@ -1,3 +1,3 @@
-# Tools
+# chibi-link
 
-A description of this package.
+A toy linker for WebAssembly object files.
