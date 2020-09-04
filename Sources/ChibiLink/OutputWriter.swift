@@ -45,7 +45,7 @@ class OutputWriter {
             symbolTable: symbolTable, funcSection: funcSection
         )
 
-        synthesizeStartStopSymbols(dataSection: dataSection)
+        synthesizeSymbols(dataSection: dataSection)
 
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
@@ -73,7 +73,7 @@ class OutputWriter {
         try writeSection(dataSection)
     }
 
-    func synthesizeStartStopSymbols(dataSection: DataSection) {
+    func synthesizeSymbols(dataSection: DataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
             let dummySegment = DataSegment(memoryIndex: 0)
             dummySegment.info = DataSegment.Info(name: name, alignment: 1, flags: 0)
@@ -90,5 +90,6 @@ class OutputWriter {
             print("Log: \(name) is synthesized")
             addSynthesizedSymbol(name: name, address: address)
         }
+        addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
 }
