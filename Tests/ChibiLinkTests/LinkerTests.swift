@@ -3,7 +3,6 @@ import XCTest
 
 @discardableResult
 func testLink(_ contents: [String: Input]) throws -> [UInt8] {
-    let linker = Linker()
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
     for (filename, input) in contents {
@@ -12,11 +11,9 @@ func testLink(_ contents: [String: Input]) throws -> [UInt8] {
         let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: binary.data, delegate: collector)
         try reader.readModule()
-        linker.append(binary)
         inputs.append(binary)
         print("Linking \(relocatable)")
     }
-    linker.link()
     let stream = InMemoryOutputByteStream()
     let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs)
     try writer.writeBinary()

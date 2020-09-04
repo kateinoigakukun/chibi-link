@@ -27,9 +27,9 @@ struct ImportSeciton: VectorSection {
         return importIndexMap[key]
     }
 
-    init(symbolTable: SymbolTable) {
+    init(symbolTable: SymbolTable, typeSection: TypeSection) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
-            guard let newImport = createImport(symbol) else { return }
+            guard let newImport = createImport(symbol, typeSection: typeSection) else { return }
             switch newImport.kind {
             case .global: globalCount += 1
             case .function: functionCount += 1
@@ -62,13 +62,13 @@ private func uniqueImportKey(module: String, field: String) -> String {
     module + "." + field
 }
 
-private func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtocol {
+private func createImport<S>(_ symbol: S, typeSection: TypeSection) -> ImportSeciton.Import? where S: SymbolProtocol {
     typealias Import = ImportSeciton.Import
     switch symbol.target {
     case .defined: return nil
     case let .undefined(undefined as FunctionImport):
-        let signature = undefined.signatureIdx
-            + undefined.selfBinary!.relocOffsets!.typeIndexOffset
+        let typeBaseIndex = typeSection.indexOffset(for: undefined.selfBinary!)!
+        let signature = typeBaseIndex + undefined.signatureIdx
         let kind = Import.Kind.function(signature: signature)
         return Import(
             kind: kind,

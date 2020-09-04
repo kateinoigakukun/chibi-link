@@ -32,8 +32,6 @@ class Section {
     var payloadSize: Size?
     let count: Int?
 
-    var memoryInitialSize: Size?
-
     var relocations: [Relocation] = []
 
     var dataSegments: [DataSegment] = []
@@ -115,24 +113,6 @@ class InputBinary {
     fileprivate(set) var debugNames: [String] = []
     fileprivate(set) var symbols: [Symbol] = []
 
-    struct RelocOffsets {
-        let importedFunctionIndexOffset: Offset
-        let importedGlobalindexOffset: Offset
-        let memoryPageOffset: Offset
-        let tableIndexOffset: Offset
-        let typeIndexOffset: Offset
-        let globalIndexOffset: Offset
-        let functionIndexOffset: Offset
-    }
-
-    var relocOffsets: RelocOffsets?
-
-    var memoryPageCount: Int {
-        sections.first(where: { $0.sectionCode == .memory })?.memoryInitialSize ?? 0
-    }
-
-    var unresolvedFunctionImportsCount: Int = 0
-
     init(filename: String, data: [UInt8]) {
         self.filename = filename
         self.data = data
@@ -194,7 +174,6 @@ class LinkInfoCollector: BinaryReaderDelegate {
             selfBinary: binary
         )
         binary.funcImports.append(funcImport)
-        binary.unresolvedFunctionImportsCount += 1
     }
 
     func onImportMemory(_: Index, _: String, _: String, _: Index, _: Limits) {
@@ -221,9 +200,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         sec.payloadSize! -= delta
     }
 
-    func onMemory(_: Index, _ pageLimits: Limits) {
-        currentSection.memoryInitialSize = Int(pageLimits.initial)
-    }
+    func onMemory(_: Index, _ pageLimits: Limits) {}
 
     func onExport(_: Index, _ kind: ExternalKind, _ itemIndex: Index, _ name: String) {
         let export = Export(kind: kind, name: name, index: itemIndex)

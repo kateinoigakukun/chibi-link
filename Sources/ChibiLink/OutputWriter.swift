@@ -19,7 +19,7 @@ class OutputWriter {
             sectionsMap[sec.sectionCode, default: []].append(sec)
         }
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
-        let importSection = ImportSeciton(symbolTable: symbolTable)
+        let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
             sections: sectionsMap[.function] ?? [],
             typeSection: typeSection, importSection: importSection

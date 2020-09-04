@@ -3,7 +3,6 @@ import XCTest
 
 @discardableResult
 func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputSection] {
-    let linker = Linker()
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
     for (filename, input) in contents {
@@ -12,17 +11,15 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputS
         let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: binary.data, delegate: collector)
         try reader.readModule()
-        linker.append(binary)
         inputs.append(binary)
         print("Linking \(relocatable)")
     }
-    linker.link()
     var sectionsMap: [BinarySection: [Section]] = [:]
     for sec in inputs.lazy.flatMap(\.sections) {
         sectionsMap[sec.sectionCode, default: []].append(sec)
     }
     let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
-    let importSection = ImportSeciton(symbolTable: symtab)
+    let importSection = ImportSeciton(symbolTable: symtab, typeSection: typeSection)
     let funcSection = FunctionSection(
         sections: sectionsMap[.function] ?? [],
         typeSection: typeSection, importSection: importSection

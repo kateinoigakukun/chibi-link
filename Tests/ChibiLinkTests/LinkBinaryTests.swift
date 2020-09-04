@@ -69,8 +69,6 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(firstImport.field, "bar")
         XCTAssertEqual(firstImport.signatureIdx, 0)
 
-        XCTAssertEqual(binary1.unresolvedFunctionImportsCount, 1)
-
         let (binary2, _) = try testCollect(content, options: ["-r"])
         var expectedSections2 = expectedSections1
         expectedSections2.insert(.custom)
