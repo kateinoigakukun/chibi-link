@@ -25,7 +25,7 @@ func readFileContents(_ filename: String) throws -> [UInt8] {
             }
             break
         }
-        bytes.append(contentsOf: tmpBuffer)
+        bytes.append(contentsOf: tmpBuffer[..<n])
     }
     return bytes
 }
