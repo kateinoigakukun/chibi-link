@@ -2,26 +2,34 @@ class OutputSegment {
     let name: String
     private(set) var alignment: Int = 1
     private(set) var size: Size = 0
-    typealias Chunk = (
-        offset: Offset,
-        segment: DataSegment
-    )
+    struct Chunk {
+        let offset: Offset
+        let segment: DataSegment
+        var relocs: [Relocation]
+        weak var section: Section!
+    }
     private(set) var chunks: [Chunk] = []
-    private(set) var relocs: [Relocation] = []
     init(name: String) {
         self.name = name
     }
 
-    func addInput(_ input: DataSegment) {
+    func addInput(_ input: DataSegment, relocs: [Relocation], section: Section) {
         alignment = max(alignment, input.info.alignment)
         size = align(size, to: 1 << input.info.alignment)
-        chunks.append((size, input))
+        chunks.append(Chunk(offset: size, segment: input, relocs: relocs, section: section))
         size += input.size
     }
+}
 
-    func addReloc(_ reloc: Relocation) {
-        relocs.append(reloc)
+extension OutputSegment.Chunk: RelocatableChunk {
+    var relocations: [Relocation] { relocs }
+    
+    var parentBinary: InputBinary { section.parentBinary }
+
+    var relocationRange: Range<Index> {
+        section.relocationRange
     }
+    
 }
 
 struct DataSection: VectorSection {
@@ -62,14 +70,15 @@ struct DataSection: VectorSection {
                     segmentMap[outputName] = outSegment
                 }
                 inputsByOutput[outputName, default: []].append(inputName)
-                outSegment.addInput(segment)
-
+                
+                var segmentRelocs: [Relocation] = []
                 while let headReloc = relocs.last,
                     headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size)
                 {
                     relocs.removeLast()
-                    outSegment.addReloc(headReloc)
+                    segmentRelocs.append(headReloc)
                 }
+                outSegment.addInput(segment, relocs: segmentRelocs, section: section)
             }
         }
         count = segmentMap.count
@@ -90,13 +99,14 @@ struct DataSection: VectorSection {
         self.outputOffsetByInputSegName = outputOffsetByInputSegName
     }
 
-    func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for (segment, offset) in segments {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                Array(chunk)
-//                relocator.relocate(section: <#T##Section#>)
+                let body = relocator.relocate(chunk: chunk)
+                let offset = chunk.segment.offset!
+                return Array(body[offset..<offset + chunk.segment.size])
             }
         }
     }

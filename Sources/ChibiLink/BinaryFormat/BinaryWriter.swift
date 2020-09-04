@@ -95,7 +95,7 @@ class BinaryWriter {
         }
     }
 
-    func writeDataSegment(_ segment: OutputSegment, startOffset: Offset, relocate: (ArraySlice<UInt8>) -> [UInt8]) throws {
+    func writeDataSegment(_ segment: OutputSegment, startOffset: Offset, relocate: (OutputSegment.Chunk) -> [UInt8]) throws {
         try writeIndex(0) // memory index
         // TODO: i64?
         try writeI32InitExpr(.i32(Int32(startOffset)))
@@ -106,7 +106,7 @@ class BinaryWriter {
             let padding = chunk.offset - written
             let paddingBytes = [UInt8](repeating: 0, count: padding)
             try stream.write(paddingBytes)
-            try stream.write(relocate(chunk.segment.data))
+            try stream.write(relocate(chunk))
         }
     }
 }

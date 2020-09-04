@@ -54,10 +54,12 @@ class OutputSectionsTests: XCTestCase {
 
         let anotherSeg = outSection.segments[0].segment
         XCTAssertEqual(anotherSeg.name, "another_sec")
-        XCTAssertEqual(anotherSeg.relocs.count, 1)
+        XCTAssertEqual(anotherSeg.chunks.count, 1)
+        XCTAssertEqual(anotherSeg.chunks[0].relocs.count, 1)
 
         let dataSeg = outSection.segments[1].segment
         XCTAssertEqual(dataSeg.name, ".data")
-        XCTAssertEqual(dataSeg.relocs.count, 1)
+        XCTAssertEqual(dataSeg.chunks.count, 5)
+        XCTAssertEqual(dataSeg.chunks.flatMap(\.relocs).count, 1)
     }
 }

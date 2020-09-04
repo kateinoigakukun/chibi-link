@@ -22,8 +22,9 @@ class CodeSection: VectorSection {
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for section in sections {
-            let text = relocator.relocate(section: section)
-            try writer.writeBytes(text[...])
+            let body = relocator.relocate(chunk: section)
+            let payload = body[(section.payloadOffset! - section.offset)...]
+            try writer.writeBytes(payload)
         }
     }
 }

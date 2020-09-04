@@ -1,3 +1,19 @@
+protocol RelocatableChunk {
+    var relocations: [Relocation] { get }
+    var parentBinary: InputBinary { get }
+    var relocationRange: Range<Index> { get }
+}
+
+extension Section: RelocatableChunk {
+    var parentBinary: InputBinary {
+        binary!
+    }
+    
+    var relocationRange: Range<Index> {
+        offset ..< offset + size
+    }
+}
+
 class Relocator {
     let symbolTable: SymbolTable
     let typeSection: TypeSection
@@ -16,14 +32,12 @@ class Relocator {
         self.dataSection = dataSection
     }
 
-    func relocate(section: Section) -> [UInt8] {
-        let relocRange = section.offset ..< section.offset + section.size
-        var body = Array(section.binary!.data[relocRange])
-        for reloc in section.relocations {
-            apply(relocation: reloc, binary: section.binary!, bytes: &body)
+    func relocate<T>(chunk: T) -> [UInt8] where T: RelocatableChunk {
+        var body = Array(chunk.parentBinary.data[chunk.relocationRange])
+        for reloc in chunk.relocations {
+            apply(relocation: reloc, binary: chunk.parentBinary, bytes: &body)
         }
-        let payload = Array(body[(section.payloadOffset! - section.offset)...])
-        return payload
+        return body
     }
 
     func translate(relocation: Relocation, binary: InputBinary) -> UInt64 {
@@ -128,7 +142,7 @@ func encodeLittleEndian<T>(_ value: T) -> [UInt8]
     for offset in 0 ..< size {
         let shift = offset * Int(8)
         let mask: T = 0xFF << shift
-        bytes[size] = UInt8((value & mask) >> shift)
+        bytes[offset] = UInt8((value & mask) >> shift)
     }
     return bytes
 }
