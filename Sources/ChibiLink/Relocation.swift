@@ -213,7 +213,7 @@ func decodeLittleEndian<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> T
     let size = MemoryLayout<T>.size
     for offset in 0 ..< size {
         let shift = offset * Int(8)
-        let byte = bytes[offset]
+        let byte = bytes[bytes.startIndex + offset]
         value += T(byte) << shift
     }
     return value
