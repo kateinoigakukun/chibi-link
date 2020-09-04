@@ -38,3 +38,15 @@ extension VectorSection {
         try writeVectorContent(writer: writer, relocator: relocator)
     }
 }
+
+protocol CustomSection: OutputSection {
+    var name: String { get }
+    func writeCustomContent(writer: BinaryWriter, relocator: Relocator) throws
+}
+
+extension CustomSection {
+    func writeContent(writer: BinaryWriter, relocator: Relocator) throws {
+        try writer.writeString(name)
+        try writeCustomContent(writer: writer, relocator: relocator)
+    }
+}

@@ -45,6 +45,10 @@ class OutputWriter {
             symbolTable: symbolTable, funcSection: funcSection
         )
 
+        #if DEBUG
+        let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
+        #endif
+
         synthesizeSymbols(dataSection: dataSection)
 
         let relocator = Relocator(
@@ -71,6 +75,9 @@ class OutputWriter {
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)
+        #if DEBUG
+        try writeSection(nameSectino)
+        #endif
     }
 
     func synthesizeSymbols(dataSection: DataSection) {
