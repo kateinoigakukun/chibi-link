@@ -89,7 +89,15 @@ class Relocator {
                 return UInt64(importSection.importIndex(for: funcImport)!)
             }
         case .globalIndexLEB, .globalIndexI32:
-            fatalError("TODO")
+            guard case let .global(globalSym) = symbol else {
+                fatalError()
+            }
+            switch globalSym.target {
+            case let .defined(target):
+                return UInt64(globalSection.indexOffset(for: target.binary)! + target.itemIndex)
+            case let .undefined(globalImport):
+                return UInt64(importSection.importIndex(for: globalImport)!)
+            }
         case .functionOffsetI32:
             guard case let .function(funcSym) = symbol,
                 case .defined = funcSym.target
