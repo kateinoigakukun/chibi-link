@@ -56,7 +56,7 @@ final class FunctionSymbol: SymbolProtocol {
     typealias Target = SymbolTarget<IndexableTarget, FunctionImport>
     fileprivate(set) var target: Target
     let flags: SymbolFlags
-    fileprivate init(target: Target, flags: SymbolFlags) {
+    init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
     }
@@ -67,7 +67,7 @@ final class GlobalSymbol: SymbolProtocol {
     fileprivate(set) var target: Target
     let flags: SymbolFlags
 
-    fileprivate init(target: Target, flags: SymbolFlags) {
+    init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
     }
@@ -90,7 +90,7 @@ final class DataSymbol: SymbolProtocol {
     fileprivate(set) var target: Target
     let flags: SymbolFlags
 
-    fileprivate init(target: Target, flags: SymbolFlags) {
+    init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
     }

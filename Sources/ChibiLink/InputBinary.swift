@@ -245,29 +245,41 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentRelocSection.relocations.append(reloc)
     }
 
-    func onFunctionSymbol(_: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+    func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: FunctionSymbol.Target
         if let name = name {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.funcImports[itemIndex])
         }
-        let symbol = symbolTable.addFunctionSymbol(target, flags: SymbolFlags(rawValue: flags))
+        let flags = SymbolFlags(rawValue: rawFlags)
+        let symbol: FunctionSymbol
+        if flags.isLocal {
+            symbol = FunctionSymbol(target: target, flags: flags)
+        } else {
+            symbol = symbolTable.addFunctionSymbol(target, flags: flags)
+        }
         binary.symbols.append(.function(symbol))
     }
 
-    func onGlobalSymbol(_: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {
+    func onGlobalSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: GlobalSymbol.Target
         if let name = name {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.globalImports[itemIndex])
         }
-        let symbol = symbolTable.addGlobalSymbol(target, flags: SymbolFlags(rawValue: flags))
+        let flags = SymbolFlags(rawValue: rawFlags)
+        let symbol: GlobalSymbol
+        if flags.isLocal {
+            symbol = GlobalSymbol(target: target, flags: flags)
+        } else {
+            symbol = symbolTable.addGlobalSymbol(target, flags: flags)
+        }
         binary.symbols.append(.global(symbol))
     }
 
-    func onDataSymbol(_: Index, _ flags: UInt32, _ name: String,
+    func onDataSymbol(_: Index, _ rawFlags: UInt32, _ name: String,
                       _ content: (segmentIndex: Index, offset: Offset, size: Size)?)
     {
         let target: DataSymbol.Target
@@ -283,7 +295,14 @@ class LinkInfoCollector: BinaryReaderDelegate {
         } else {
             target = .undefined(DataSymbol.UndefinedSegment(name: name))
         }
-        let symbol = symbolTable.addDataSymbol(target, flags: SymbolFlags(rawValue: flags))
+        
+        let flags = SymbolFlags(rawValue: rawFlags)
+        let symbol: DataSymbol
+        if flags.isLocal {
+            symbol = DataSymbol(target: target, flags: flags)
+        } else {
+            symbol = symbolTable.addDataSymbol(target, flags: flags)
+        }
         binary.symbols.append(.data(symbol))
     }
 
