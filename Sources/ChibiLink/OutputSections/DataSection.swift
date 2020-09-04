@@ -41,6 +41,7 @@ struct DataSection: VectorSection {
         segment: OutputSegment, offset: Offset
     )
     let segments: [LocatedSegment]
+    let initialMemorySize: Size
     private let outputOffsetByInputSegName: [String: Offset]
 
     func startVirtualAddress(for binary: DataSegment) -> Offset? {
@@ -97,6 +98,7 @@ struct DataSection: VectorSection {
         }
         self.segments = segments
         self.outputOffsetByInputSegName = outputOffsetByInputSegName
+        self.initialMemorySize = memoryOffset
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {

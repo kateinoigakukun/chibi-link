@@ -25,15 +25,13 @@ class OutputWriter {
             typeSection: typeSection, importSection: importSection
         )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+        let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
+        let memorySection = MemorySection(dataSection: dataSection)
 
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
             importSection: importSection,
             funcSection: funcSection, dataSection: dataSection
-        )
-
-        let codeSection = CodeSection(
-            sections: sectionsMap[.code] ?? [], relocator: relocator
         )
 
         func writeSection<S: OutputSection>(_ section: S) throws {
@@ -43,6 +41,7 @@ class OutputWriter {
         try writeSection(typeSection)
         try writeSection(importSection)
         try writeSection(funcSection)
+        try writeSection(memorySection)
         try writeSection(codeSection)
         try writeSection(dataSection)
     }

@@ -3,9 +3,8 @@ class CodeSection: VectorSection {
     let size: OutputSectionSize
     let count: Int
     let sections: [Section]
-    let relocator: Relocator
 
-    init(sections: [Section], relocator: Relocator) {
+    init(sections: [Section]) {
         var totalSize = 0
         var totalCount = 0
         for section in sections {
@@ -17,7 +16,6 @@ class CodeSection: VectorSection {
         self.sections = sections
         count = totalCount
         size = .fixed(totalSize)
-        self.relocator = relocator
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
