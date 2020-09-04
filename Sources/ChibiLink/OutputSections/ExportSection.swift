@@ -10,7 +10,7 @@ class ExportSection: VectorSection {
     }
 
     var section: BinarySection { .export }
-    let count: Int
+    var count: Int { exports.count }
     var size: OutputSectionSize { .unknown }
     private(set) var exports: [Export]
 
@@ -34,7 +34,6 @@ class ExportSection: VectorSection {
             exports.append(export)
         }
 
-        var totalCount = 0
         for symbol in symbolTable.symbols() {
             guard symbol.flags.isExported else { continue }
             switch symbol {
@@ -45,7 +44,6 @@ class ExportSection: VectorSection {
                     baseOffset: funcSection.indexOffset(for: target.binary)!,
                     kind: Export.Kind.function
                 )
-                totalCount += 1
             case let .global(symbol):
                 guard case let .defined(target) = symbol.target else { continue }
                 addExport(
@@ -53,13 +51,11 @@ class ExportSection: VectorSection {
                     baseOffset: globalSection.indexOffset(for: target.binary)!,
                     kind: Export.Kind.global
                 )
-                totalCount += 1
             case .data:
                 // FIXME: Support exports for data symbols through global.
                 continue
             }
         }
-        count = totalCount
         self.exports = exports
     }
 
