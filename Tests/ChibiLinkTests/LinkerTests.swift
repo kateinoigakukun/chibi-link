@@ -1,25 +1,13 @@
 @testable import ChibiLink
 import XCTest
 
-enum Input {
-    case wat(String)
-    case llvm(String)
-}
-
 @discardableResult
 func testLink(_ contents: [String: Input]) throws -> [UInt8] {
     let linker = Linker()
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
     for (filename, input) in contents {
-        let relocatable: URL = {
-            switch input {
-            case let .wat(content):
-                return compileWat(content, options: ["-r"])
-            case let .llvm(content):
-                return compileLLVMIR(content)
-            }
-        }()
+        let relocatable = compile(input.relocatable())
         let binary = createInputBinary(relocatable, filename: filename)
         let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: binary.data, delegate: collector)
@@ -95,7 +83,7 @@ class LinkerTests: XCTestCase {
         XCTAssertEqual(collector.importedFunctions.sorted(), ["bar", "fizz"])
     }
 
-    func testRelocData() throws {
+    func testMergeData() throws {
         let bytes = try testLink([
             "foo.ll": .llvm("""
             target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
@@ -130,6 +118,36 @@ class LinkerTests: XCTestCase {
         }
         let collector = Collector()
         let reader = BinaryReader(bytes: bytes, delegate: collector)
+        let (output, _) = makeTemporaryFile()
+        print(output)
+        try Data(bytes).write(to: output)
+        try reader.readModule()
+    }
+    
+    func testRelocData() throws {
+        let bytes = try testLink([
+            "foo.ll": .llvm("""
+            target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+            target triple = "wasm32-unknown-unknown"
+            
+            @hello_str = hidden global [12 x i8] c"hello world\\00"
+            @bye_str   = hidden global [9 x i8] c"good bye\\00"
+            """),
+            "user.ll": .llvm("""
+            target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+            target triple = "wasm32-unknown-unknown"
+            
+            @foo = hidden global i32 1, align 4
+            @aligned_bar = hidden global i32 3, align 16
+            
+            @hello_str = external global i8*
+            @external_ref1 = global i8** @hello_str, align 8
+            @bye_str = external global i8*
+            @external_ref2 = global i8** @bye_str, align 8
+            """)
+        ])
+        
+        let reader = BinaryReader(bytes: bytes, delegate: NopDelegate())
         let (output, _) = makeTemporaryFile()
         print(output)
         try Data(bytes).write(to: output)

@@ -6,7 +6,7 @@ class TypeSection: VectorSection {
     private let sections: [Section]
     private let indexOffsetByFileName: [String: Offset]
 
-    func writeVectorContent(writer: BinaryWriter) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for section in sections {
             let offset = section.payloadOffset!
             let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]

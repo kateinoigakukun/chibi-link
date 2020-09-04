@@ -20,7 +20,7 @@ class CodeSection: VectorSection {
         self.relocator = relocator
     }
     
-    func writeVectorContent(writer: BinaryWriter) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for section in sections {
             let text = relocator.relocate(section: section)
             try writer.writeBytes(text[...])

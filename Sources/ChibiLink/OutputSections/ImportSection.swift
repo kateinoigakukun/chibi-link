@@ -25,12 +25,6 @@ struct ImportSeciton: VectorSection {
         return importIndexMap[key]
     }
 
-    func writeVectorContent(writer: BinaryWriter) throws {
-        for anImport in imports {
-            try writer.writeImport(anImport)
-        }
-    }
-
     init(symbolTable: SymbolTable) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol) else { return }
@@ -48,6 +42,12 @@ struct ImportSeciton: VectorSection {
                 // We don't generate imports for data symbols.
                 continue
             }
+        }
+    }
+    
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+        for anImport in imports {
+            try writer.writeImport(anImport)
         }
     }
 }

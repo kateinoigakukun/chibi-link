@@ -25,7 +25,7 @@ class FunctionSection: VectorSection {
         return indexOffsetByFileName[binary.filename]
     }
     
-    func writeVectorContent(writer: BinaryWriter) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         // Read + Write + Relocate type indexes
         for section in sections {
             let payloadStart = section.payloadOffset!

@@ -7,6 +7,7 @@ class OutputSegment {
         segment: DataSegment
     )
     private(set) var chunks: [Chunk] = []
+    private(set) var relocs: [Relocation] = []
     init(name: String) {
         self.name = name
     }
@@ -16,6 +17,10 @@ class OutputSegment {
         size = align(size, to: 1 << input.info.alignment)
         chunks.append((size, input))
         size += input.size
+    }
+    
+    func addReloc(_ reloc: Relocation) {
+        relocs.append(reloc)
     }
 }
 
@@ -27,7 +32,7 @@ struct DataSection: VectorSection {
     typealias LocatedSegment = (
         segment: OutputSegment, offset: Offset
     )
-    private let segments: [LocatedSegment]
+    let segments: [LocatedSegment]
     private let outputOffsetByInputSegName: [String: Offset]
 
     func startVirtualAddress(for binary: DataSegment) -> Offset? {
@@ -35,25 +40,38 @@ struct DataSection: VectorSection {
     }
 
     init(sections: [Section]) {
-        var totalCount: Int = 0
         var segmentMap: [String: OutputSegment] = [:]
         var inputsByOutput: [String: [String]] = [:]
-        for segment in sections.lazy.flatMap(\.dataSegments) {
-            let info = segment.info!
-            let inputName = info.name
-            let outputName = getOutputSegmentName(inputName)
-            let outSegment: OutputSegment
-            if let existing = segmentMap[outputName] {
-                outSegment = existing
-            } else {
-                outSegment = OutputSegment(name: outputName)
-                segmentMap[info.name] = outSegment
+        for section in sections {
+            var relocs = section.relocations.sorted(by: {
+                $0.offset > $1.offset
+            })
+            let segments = section.dataSegments.sorted(by: {
+                $0.offset < $1.offset
+            })
+            let vectorHeaderSize = section.payloadOffset! - section.offset
+            for segment in segments {
+                let info = segment.info!
+                let inputName = info.name
+                let outputName = getOutputSegmentName(inputName)
+                let outSegment: OutputSegment
+                if let existing = segmentMap[outputName] {
+                    outSegment = existing
+                } else {
+                    outSegment = OutputSegment(name: outputName)
+                    segmentMap[outputName] = outSegment
+                }
+                inputsByOutput[outputName, default: []].append(inputName)
+                outSegment.addInput(segment)
+                
+                while let headReloc = relocs.last,
+                      headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size) {
+                    relocs.removeLast()
+                    outSegment.addReloc(headReloc)
+                }
             }
-            inputsByOutput[outputName, default: []].append(inputName)
-            outSegment.addInput(segment)
-            totalCount += 1
         }
-        count = totalCount
+        count = segmentMap.count
         let segmentList = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
         var segments: [LocatedSegment] = []
         var memoryOffset: Offset = 0
@@ -71,11 +89,14 @@ struct DataSection: VectorSection {
         self.outputOffsetByInputSegName = outputOffsetByInputSegName
     }
 
-    func writeVectorContent(writer: BinaryWriter) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for (segment, offset) in segments {
             try writer.writeDataSegment(
                 segment, startOffset: offset
-            )
+            ) { chunk in
+                return Array(chunk)
+//                relocator.relocate(section: <#T##Section#>)
+            }
         }
     }
 }
