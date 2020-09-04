@@ -452,6 +452,7 @@ class BinaryReader {
             let symTypeCode = readU8Fixed()
             let symFlags = readU32Leb128()
             let symType = SymbolType(rawValue: symTypeCode)!
+            let binding = symFlags & SYMBOL_BINDING_MASK
 //                    delegate.onSymbol(i, symType, symFlags)
 
             switch symType {
@@ -479,6 +480,9 @@ class BinaryReader {
                     )
                 }
                 delegate.onDataSymbol(i, symFlags, name, content)
+            case .section:
+                assert(binding == SYMBOL_BINDING_LOCAL)
+                _ = readU32Leb128() // section index
             }
         }
     }

@@ -97,6 +97,7 @@ enum SymbolType: UInt8 {
     case function = 0
     case data = 1
     case global = 2
+    case section = 3
 }
 
 let SYMBOL_FLAG_UNDEFINED: UInt32 = 0x10
