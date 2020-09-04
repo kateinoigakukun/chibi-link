@@ -109,5 +109,4 @@ class BinaryWriter {
             try stream.write(relocate(chunk.segment.data))
         }
     }
-
 }

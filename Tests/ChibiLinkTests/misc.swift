@@ -32,7 +32,7 @@ func createFile(_ content: String) -> URL {
 enum Input {
     case wat(String, options: [String])
     case llvm(String, options: [String])
-    
+
     static func wat(_ input: String) -> Input {
         return .wat(input, options: [])
     }
@@ -40,7 +40,7 @@ enum Input {
     static func llvm(_ input: String) -> Input {
         return .llvm(input, options: [])
     }
-    
+
     func relocatable() -> Input {
         switch self {
         case let .wat(content, options):

@@ -35,7 +35,7 @@ class OutputWriter {
         let codeSection = CodeSection(
             sections: sectionsMap[.code] ?? [], relocator: relocator
         )
-        
+
         func writeSection<S: OutputSection>(_ section: S) throws {
             try section.write(writer: writer, relocator: relocator)
         }

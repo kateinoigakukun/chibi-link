@@ -18,7 +18,7 @@ class OutputSegment {
         chunks.append((size, input))
         size += input.size
     }
-    
+
     func addReloc(_ reloc: Relocation) {
         relocs.append(reloc)
     }
@@ -63,9 +63,10 @@ struct DataSection: VectorSection {
                 }
                 inputsByOutput[outputName, default: []].append(inputName)
                 outSegment.addInput(segment)
-                
+
                 while let headReloc = relocs.last,
-                      headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size) {
+                    headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size)
+                {
                     relocs.removeLast()
                     outSegment.addReloc(headReloc)
                 }
@@ -89,32 +90,32 @@ struct DataSection: VectorSection {
         self.outputOffsetByInputSegName = outputOffsetByInputSegName
     }
 
-    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
         for (segment, offset) in segments {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                return Array(chunk)
+                Array(chunk)
 //                relocator.relocate(section: <#T##Section#>)
             }
         }
     }
 }
 
-fileprivate func getOutputSegmentName(_ name: String) -> String {
-    if (name.hasPrefix(".tdata") || name.hasPrefix(".tbss")) {
+private func getOutputSegmentName(_ name: String) -> String {
+    if name.hasPrefix(".tdata") || name.hasPrefix(".tbss") {
         return ".tdata"
     }
-    if (name.hasPrefix(".text.")) {
+    if name.hasPrefix(".text.") {
         return ".text"
     }
-    if (name.hasPrefix(".data.")) {
+    if name.hasPrefix(".data.") {
         return ".data"
     }
-    if (name.hasPrefix(".bss.")) {
+    if name.hasPrefix(".bss.") {
         return ".bss"
     }
-    if (name.hasPrefix(".rodata.")) {
+    if name.hasPrefix(".rodata.") {
         return ".rodata"
     }
     return name

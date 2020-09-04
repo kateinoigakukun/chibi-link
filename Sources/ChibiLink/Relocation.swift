@@ -7,16 +7,17 @@ class Relocator {
 
     init(symbolTable: SymbolTable, typeSection: TypeSection,
          importSection: ImportSeciton,
-         funcSection: FunctionSection, dataSection: DataSection) {
+         funcSection: FunctionSection, dataSection: DataSection)
+    {
         self.symbolTable = symbolTable
         self.typeSection = typeSection
         self.importSection = importSection
         self.funcSection = funcSection
         self.dataSection = dataSection
     }
-    
+
     func relocate(section: Section) -> [UInt8] {
-        let relocRange = section.offset..<section.offset+section.size
+        let relocRange = section.offset ..< section.offset + section.size
         var body = Array(section.binary!.data[relocRange])
         for reloc in section.relocations {
             apply(relocation: reloc, binary: section.binary!, bytes: &body)
@@ -24,9 +25,9 @@ class Relocator {
         let payload = Array(body[(section.payloadOffset! - section.offset)...])
         return payload
     }
-    
+
     func translate(relocation: Relocation, binary: InputBinary) -> UInt64 {
-        var symbol: Symbol? = nil
+        var symbol: Symbol?
         if relocation.type != .typeIndexLEB {
             symbol = binary.symbols[relocation.symbolIndex]
         }
@@ -37,7 +38,6 @@ class Relocator {
              .tableIndexSLEB64,
              .tableIndexRelSLEB:
             fatalError("TODO: Write out TableSection and get index from it")
-            break
         case .memoryAddressLEB,
              .memoryAddressLeb64,
              .memoryAddressSLEB,
@@ -47,7 +47,8 @@ class Relocator {
              .memoryAddressI32,
              .memoryAddressI64:
             guard case let .data(dataSym) = symbol,
-                  case let .defined(target) = dataSym.target else {
+                case let .defined(target) = dataSym.target
+            else {
                 fatalError()
             }
             let startVA = dataSection.startVirtualAddress(for: target.segment)!
@@ -69,10 +70,11 @@ class Relocator {
             fatalError("TODO")
         case .functionOffsetI32:
             guard case let .function(funcSym) = symbol,
-                  case .defined = funcSym.target else {
+                case .defined = funcSym.target
+            else {
                 fatalError()
             }
-            // TODO: Need to parse each function code to derive code offset
+        // TODO: Need to parse each function code to derive code offset
         case .sectionOffsetI32:
             // TODO: Support section symbol
             break
@@ -119,12 +121,13 @@ class Relocator {
 }
 
 func encodeLittleEndian<T>(_ value: T) -> [UInt8]
-where T: FixedWidthInteger {
+    where T: FixedWidthInteger
+{
     let size = MemoryLayout<T>.size
     var bytes = [UInt8](repeating: 0, count: size)
-    for offset in 0..<size {
+    for offset in 0 ..< size {
         let shift = offset * Int(8)
-        let mask: T = 0xff << shift
+        let mask: T = 0xFF << shift
         bytes[size] = UInt8((value & mask) >> shift)
     }
     return bytes

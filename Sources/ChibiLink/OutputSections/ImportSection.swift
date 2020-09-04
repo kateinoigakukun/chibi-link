@@ -19,7 +19,7 @@ struct ImportSeciton: VectorSection {
     mutating func addImport(_ import: Import) {
         imports.append(`import`)
     }
-    
+
     func importIndex<T: UndefinedTarget>(for target: T) -> Index? {
         let key = uniqueImportKey(module: target.module, field: target.name)
         return importIndexMap[key]
@@ -44,15 +44,15 @@ struct ImportSeciton: VectorSection {
             }
         }
     }
-    
-    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+
+    func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
         for anImport in imports {
             try writer.writeImport(anImport)
         }
     }
 }
 
-fileprivate func uniqueImportKey(module: String, field: String) -> String {
+private func uniqueImportKey(module: String, field: String) -> String {
     module + "." + field
 }
 
@@ -80,4 +80,3 @@ func createImport<S>(_ symbol: S) -> ImportSeciton.Import? where S: SymbolProtoc
         fatalError("unreachable")
     }
 }
-

@@ -4,7 +4,7 @@ class CodeSection: VectorSection {
     let count: Int
     let sections: [Section]
     let relocator: Relocator
-    
+
     init(sections: [Section], relocator: Relocator) {
         var totalSize = 0
         var totalCount = 0
@@ -15,11 +15,11 @@ class CodeSection: VectorSection {
         let lengthBytes = encodeULEB128(UInt32(totalCount))
         totalSize += lengthBytes.count
         self.sections = sections
-        self.count = totalCount
-        self.size = .fixed(totalSize)
+        count = totalCount
+        size = .fixed(totalSize)
         self.relocator = relocator
     }
-    
+
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         for section in sections {
             let text = relocator.relocate(section: section)
