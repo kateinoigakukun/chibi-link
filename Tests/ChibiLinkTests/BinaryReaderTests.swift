@@ -22,7 +22,7 @@ class NopDelegate: BinaryReaderDelegate {
     func beginDataSegment(_: Int, _: Int) {}
     func onDataSegmentData(_: Int, _: ArraySlice<UInt8>, _: Int) {}
     func onRelocCount(_: Int, _: Int) {}
-    func onReloc(_: RelocType, _: Offset, _: Index, _: UInt32) {}
+    func onReloc(_: RelocType, _: Offset, _: Index, _: Int32) {}
     func onFunctionSymbol(_: Index, _: UInt32, _: String?, _: Index) {}
 
     func onGlobalSymbol(_: Index, _: UInt32, _: String?, _: Index) {}

@@ -20,6 +20,10 @@ class ElementSection: VectorSection {
         indexOffsetByFileName = indexOffsets
     }
 
+    func indexOffset(for binary: InputBinary) -> Offset? {
+        return indexOffsetByFileName[binary.filename]
+    }
+
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
         try writer.writeULEB128(UInt32(0)) // table index
         try writer.writeI32InitExpr(.i32(0)) // offset

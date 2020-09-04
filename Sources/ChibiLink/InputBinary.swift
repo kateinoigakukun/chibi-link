@@ -19,7 +19,7 @@ struct Relocation {
     let type: RelocType
     let offset: Offset
     let symbolIndex: Index
-    let addend: UInt32
+    let addend: Int32
 }
 
 class Section {
@@ -238,7 +238,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentRelocSection = binary.sections[sectionIndex]
     }
 
-    func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: UInt32) {
+    func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: Int32) {
         let reloc = Relocation(type: type, offset: offset, symbolIndex: symbolIndex, addend: addend)
         currentRelocSection.relocations.append(reloc)
     }

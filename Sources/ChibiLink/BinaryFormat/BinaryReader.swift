@@ -38,7 +38,7 @@ protocol BinaryReaderDelegate {
     func onRelocCount(_ relocsCount: Int, _ sectionIndex: Index)
 
     func onReloc(_ type: RelocType, _ offset: Offset,
-                 _ index: Index, _ addend: UInt32)
+                 _ index: Index, _ addend: Int32)
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
 
@@ -113,10 +113,10 @@ class BinaryReader {
         return value
     }
 
-    func readS32Leb128() -> UInt32 {
+    func readS32Leb128() -> Int32 {
         let (value, advanced) = decodeSLEB128(state.bytes[state.offset...], Int32.self)
         state.offset += advanced
-        return UInt32(bitPattern: value)
+        return value
     }
 
     func readString() -> String {
@@ -407,7 +407,7 @@ class BinaryReader {
             }
             let offset = readOffset()
             let index = readIndex()
-            let addend: UInt32
+            let addend: Int32
             switch type {
             case .memoryAddressLEB,
                  .memoryAddressSLEB,

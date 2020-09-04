@@ -45,7 +45,7 @@ class Relocator {
         return body
     }
 
-    func translate(relocation: Relocation, binary: InputBinary) -> UInt64 {
+    func translate(relocation: Relocation, binary: InputBinary, current: Int) -> UInt64 {
         var symbol: Symbol?
         if relocation.type != .typeIndexLEB {
             symbol = binary.symbols[relocation.symbolIndex]
@@ -56,7 +56,7 @@ class Relocator {
              .tableIndexSLEB,
              .tableIndexSLEB64,
              .tableIndexRelSLEB:
-            fatalError("TODO: Write out TableSection and get index from it")
+            return UInt64(elemSection.indexOffset(for: binary)! + current)
         case .memoryAddressLEB,
              .memoryAddressLeb64,
              .memoryAddressSLEB,
@@ -74,7 +74,7 @@ class Relocator {
                 fatalError()
             }
             let startVA = dataSection.startVirtualAddress(for: target.segment)!
-            return UInt64(startVA) + UInt64(relocation.addend)
+            return UInt64(startVA + Int(relocation.addend))
         case .typeIndexLEB:
             // for R_WASM_TYPE_INDEX_LEB, symbolIndex means the index for the type
             return UInt64(typeSection.indexOffset(for: binary)! + relocation.symbolIndex)
@@ -114,38 +114,81 @@ class Relocator {
 
     func apply(relocation: Relocation, binary: InputBinary, bytes: inout [UInt8]) {
         let location = bytes.startIndex + relocation.offset
-        let value = translate(relocation: relocation, binary: binary)
+        let currentValue: Int
+        switch relocation.type.outputType {
+        case .ULEB128_32Bit:
+            currentValue = Int(decodeULEB128(bytes[location...], UInt32.self).value)
+        case .ULEB128_64Bit:
+            currentValue = Int(decodeULEB128(bytes[location...], UInt64.self).value)
+        case .SLEB128_32Bit:
+            currentValue = Int(decodeSLEB128(bytes[location...], Int32.self).value)
+        case .SLEB128_64Bit:
+            currentValue = Int(decodeSLEB128(bytes[location...], Int64.self).value)
+        case .LE32Bit:
+            currentValue = Int(decodeLittleEndian(bytes[location...], UInt32.self))
+        case .LE64Bit:
+            currentValue = Int(decodeLittleEndian(bytes[location...], UInt64.self))
+        }
+        let value = translate(relocation: relocation, binary: binary, current: currentValue)
         func writeBytes(_ result: [UInt8]) {
             for (offset, byte) in result.enumerated() {
                 bytes[location + offset] = byte
             }
         }
-        switch relocation.type {
+        switch relocation.type.outputType {
+        case .ULEB128_32Bit:
+            writeBytes(encodeULEB128(UInt32(value), padTo: 5))
+        case .ULEB128_64Bit:
+            writeBytes(encodeULEB128(UInt64(value), padTo: 10))
+        case .SLEB128_32Bit:
+            writeBytes(encodeSLEB128(Int32(value), padTo: 5))
+        case .SLEB128_64Bit:
+            writeBytes(encodeSLEB128(Int64(value), padTo: 10))
+        case .LE32Bit:
+            writeBytes(encodeLittleEndian(UInt32(value)))
+        case .LE64Bit:
+            writeBytes(encodeLittleEndian(UInt64(value)))
+        }
+    }
+}
+
+fileprivate extension RelocType {
+    enum OutputType {
+        case ULEB128_32Bit
+        case ULEB128_64Bit
+        case SLEB128_32Bit
+        case SLEB128_64Bit
+        case LE32Bit
+        case LE64Bit
+    }
+    
+    var outputType: OutputType {
+        switch self {
         case .typeIndexLEB,
              .functionIndexLEB,
              .globalIndexLEB,
              .memoryAddressLEB:
-            writeBytes(encodeULEB128(UInt32(value), padTo: 5))
+            return .ULEB128_32Bit
         case .memoryAddressLeb64:
-            writeBytes(encodeULEB128(UInt64(value), padTo: 10))
+            return .ULEB128_64Bit
         case .tableIndexSLEB,
              .tableIndexRelSLEB,
              .memoryAddressSLEB,
              .memoryAddressRelSLEB:
-            writeBytes(encodeSLEB128(Int32(value), padTo: 5))
+            return .SLEB128_32Bit
         case .tableIndexSLEB64,
              .memoryAddressSLEB64,
              .memoryAddressRelSLEB64:
-            writeBytes(encodeSLEB128(Int64(value), padTo: 10))
+            return .SLEB128_64Bit
         case .tableIndexI32,
              .memoryAddressI32,
              .functionOffsetI32,
              .sectionOffsetI32,
              .globalIndexI32:
-            writeBytes(encodeLittleEndian(UInt32(value)))
+            return .LE32Bit
         case .tableIndexI64,
              .memoryAddressI64:
-            writeBytes(encodeLittleEndian(UInt64(value)))
+            return .LE64Bit
         }
     }
 }
@@ -161,4 +204,17 @@ func encodeLittleEndian<T>(_ value: T) -> [UInt8]
         bytes[offset] = UInt8((value & mask) >> shift)
     }
     return bytes
+}
+
+func decodeLittleEndian<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> T
+    where T: FixedWidthInteger
+{
+    var value: T = 0
+    let size = MemoryLayout<T>.size
+    for offset in 0 ..< size {
+        let shift = offset * Int(8)
+        let byte = bytes[offset]
+        value += T(byte) << shift
+    }
+    return value
 }
