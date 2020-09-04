@@ -8,6 +8,7 @@ class OutputSegment {
         var relocs: [Relocation]
         weak var section: Section!
     }
+
     private(set) var chunks: [Chunk] = []
     init(name: String) {
         self.name = name
@@ -23,13 +24,12 @@ class OutputSegment {
 
 extension OutputSegment.Chunk: RelocatableChunk {
     var relocations: [Relocation] { relocs }
-    
+
     var parentBinary: InputBinary { section.parentBinary }
 
     var relocationRange: Range<Index> {
         section.relocationRange
     }
-    
 }
 
 struct DataSection: VectorSection {
@@ -71,7 +71,7 @@ struct DataSection: VectorSection {
                     segmentMap[outputName] = outSegment
                 }
                 inputsByOutput[outputName, default: []].append(inputName)
-                
+
                 var segmentRelocs: [Relocation] = []
                 while let headReloc = relocs.last,
                     headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size)
@@ -98,7 +98,7 @@ struct DataSection: VectorSection {
         }
         self.segments = segments
         self.outputOffsetByInputSegName = outputOffsetByInputSegName
-        self.initialMemorySize = memoryOffset
+        initialMemorySize = memoryOffset
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
@@ -108,7 +108,7 @@ struct DataSection: VectorSection {
             ) { chunk in
                 let body = relocator.relocate(chunk: chunk)
                 let offset = chunk.segment.offset!
-                return Array(body[offset..<offset + chunk.segment.size])
+                return Array(body[offset ..< offset + chunk.segment.size])
             }
         }
     }

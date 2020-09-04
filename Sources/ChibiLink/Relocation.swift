@@ -8,7 +8,7 @@ extension Section: RelocatableChunk {
     var parentBinary: InputBinary {
         binary!
     }
-    
+
     var relocationRange: Range<Index> {
         offset ..< offset + size
     }
