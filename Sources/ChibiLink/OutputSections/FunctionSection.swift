@@ -13,7 +13,7 @@ class FunctionSection: VectorSection {
         var totalCount = 0
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
-            indexOffsets[section.binary!.filename] = totalCount + importSection.count
+            indexOffsets[section.binary!.filename] = totalCount + importSection.functionCount
             totalCount += section.count!
         }
         count = totalCount

@@ -12,6 +12,8 @@ struct ImportSeciton: VectorSection {
     var section: BinarySection { .import }
     var size: OutputSectionSize { .unknown }
     var count: Int { imports.count }
+    private(set) var functionCount: Int = 0
+    private(set) var globalCount: Int = 0
 
     private(set) var imports: [Import] = []
     private var importIndexMap: [String: Index] = [:]
@@ -28,6 +30,10 @@ struct ImportSeciton: VectorSection {
     init(symbolTable: SymbolTable) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol) else { return }
+            switch newImport.kind {
+            case .global: globalCount += 1
+            case .function: functionCount += 1
+            }
             let key = uniqueImportKey(
                 module: newImport.module, field: newImport.field
             )

@@ -21,10 +21,12 @@ class Relocator {
     let funcSection: FunctionSection
     let elemSection: ElementSection
     let dataSection: DataSection
+    let globalSection: GlobalSection
 
     init(symbolTable: SymbolTable, typeSection: TypeSection,
          importSection: ImportSeciton, funcSection: FunctionSection,
-         elemSection: ElementSection, dataSection: DataSection)
+         elemSection: ElementSection, dataSection: DataSection,
+         globalSection: GlobalSection)
     {
         self.symbolTable = symbolTable
         self.typeSection = typeSection
@@ -32,6 +34,7 @@ class Relocator {
         self.funcSection = funcSection
         self.elemSection = elemSection
         self.dataSection = dataSection
+        self.globalSection = globalSection
     }
 
     func relocate<T>(chunk: T) -> [UInt8] where T: RelocatableChunk {

@@ -83,6 +83,27 @@ class LinkerTests: XCTestCase {
         XCTAssertEqual(collector.importedFunctions.sorted(), ["bar", "fizz"])
     }
 
+    func testMergeGlobals() throws {
+        let bytes = try testLink([
+            "foo.wat": .wat("""
+            (module
+              (import "__extern" "bar" (global i32))
+              (global i32 (i32.const 1))
+            )
+            """),
+            "main.wat": .wat("""
+            (module
+                (global i64 (i64.const 2))
+            )
+            """),
+        ])
+        let reader = BinaryReader(bytes: bytes, delegate: NopDelegate())
+        let (output, handle) = makeTemporaryFile()
+        handle.write(Data(bytes))
+        print(output)
+        try reader.readModule()
+    }
+
     func testMergeData() throws {
         let bytes = try testLink([
             "foo.ll": .llvm("""

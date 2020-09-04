@@ -24,6 +24,9 @@ class OutputWriter {
             sections: sectionsMap[.function] ?? [],
             typeSection: typeSection, importSection: importSection
         )
+        let globalSection = GlobalSection(
+            sections: sectionsMap[.global] ?? [], importSection: importSection
+        )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
         let tableSection = TableSection(inputs: inputs)
@@ -35,7 +38,8 @@ class OutputWriter {
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
             importSection: importSection, funcSection: funcSection,
-            elemSection: elemSection, dataSection: dataSection
+            elemSection: elemSection, dataSection: dataSection,
+            globalSection: globalSection
         )
 
         func writeSection<S: OutputSection>(_ section: S) throws {
@@ -47,6 +51,7 @@ class OutputWriter {
         try writeSection(funcSection)
         try writeSection(tableSection)
         try writeSection(memorySection)
+        try writeSection(globalSection)
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)
