@@ -152,7 +152,7 @@ class Relocator {
     }
 }
 
-fileprivate extension RelocType {
+private extension RelocType {
     enum OutputType {
         case ULEB128_32Bit
         case ULEB128_64Bit
@@ -161,7 +161,7 @@ fileprivate extension RelocType {
         case LE32Bit
         case LE64Bit
     }
-    
+
     var outputType: OutputType {
         switch self {
         case .typeIndexLEB,

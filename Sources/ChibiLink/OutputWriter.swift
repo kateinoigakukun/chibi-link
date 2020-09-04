@@ -72,7 +72,7 @@ class OutputWriter {
         try writeSection(codeSection)
         try writeSection(dataSection)
     }
-    
+
     func synthesizeStartStopSymbols(dataSection: DataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
             let dummySegment = DataSegment(memoryIndex: 0)
@@ -84,7 +84,7 @@ class OutputWriter {
             _ = symbolTable.addDataSymbol(.defined(segment), flags: flags)
             dataSection.setVirtualAddress(for: name, address)
         }
-        
+
         for (segment, address) in dataSection.segments {
             let name = "__start_\(segment.name)"
             print("Log: \(name) is synthesized")

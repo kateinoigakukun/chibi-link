@@ -2,7 +2,6 @@ import ChibiLink
 import XCTest
 
 class IntegrationTests: XCTestCase {
-    
     func testLinkSwiftStdlib() throws {
         let experiment = URL(fileURLWithPath: #file)
             .deletingLastPathComponent()

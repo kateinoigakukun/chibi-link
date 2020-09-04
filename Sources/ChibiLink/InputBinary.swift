@@ -199,7 +199,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         sec.payloadSize! -= delta
     }
 
-    func onMemory(_: Index, _ pageLimits: Limits) {}
+    func onMemory(_: Index, _: Limits) {}
 
     func onExport(_: Index, _ kind: ExternalKind, _ itemIndex: Index, _ name: String) {
         let export = Export(kind: kind, name: name, index: itemIndex)
@@ -219,7 +219,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         segment.offset = Int(value)
     }
 
-    func onDataSegmentData(_: Index, _ data: ArraySlice<UInt8>, _ size: Size) {
+    func onDataSegmentData(_: Index, _: ArraySlice<UInt8>, _ size: Size) {
         let sec = currentSection!
         let segment = sec.dataSegments.last!
         segment.size = size
@@ -293,7 +293,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         } else {
             target = .undefined(DataSymbol.UndefinedSegment(name: name))
         }
-        
+
         let flags = SymbolFlags(rawValue: rawFlags)
         let symbol: DataSymbol
         if flags.isLocal {
