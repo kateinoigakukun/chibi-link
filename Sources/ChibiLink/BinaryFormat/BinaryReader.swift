@@ -458,7 +458,9 @@ class BinaryReader {
             case .function, .global:
                 let itemIndex = Index(readU32Leb128())
                 var name: String?
-                if symFlags & SYMBOL_FLAG_UNDEFINED == 0 {
+                let isDefined = symFlags & SYMBOL_FLAG_UNDEFINED == 0
+                let isExplicit = symFlags & SYMBOL_EXPLICIT_NAME != 0
+                if isDefined || isExplicit {
                     name = readString()
                 }
                 if symType == .function {
