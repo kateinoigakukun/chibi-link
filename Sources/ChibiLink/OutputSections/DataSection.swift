@@ -32,7 +32,7 @@ extension OutputSegment.Chunk: RelocatableChunk {
     }
 }
 
-struct DataSection: VectorSection {
+class DataSection: VectorSection {
     var section: BinarySection { .data }
     var size: OutputSectionSize { .unknown }
     let count: Size
@@ -42,10 +42,15 @@ struct DataSection: VectorSection {
     )
     let segments: [LocatedSegment]
     let initialMemorySize: Size
-    private let outputOffsetByInputSegName: [String: Offset]
+    private var outputOffsetByInputSegName: [String: Offset]
 
-    func startVirtualAddress(for binary: DataSegment) -> Offset? {
-        return outputOffsetByInputSegName[binary.info.name]
+    func startVirtualAddress(for segment: DataSegment) -> Offset? {
+        return outputOffsetByInputSegName[segment.info.name]
+    }
+    
+    // For linker synthesized symbols
+    func setVirtualAddress(for name: String, _ address: Offset) {
+        outputOffsetByInputSegName[name] = address
     }
 
     init(sections: [Section]) {

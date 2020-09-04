@@ -68,6 +68,9 @@ class Relocator {
             guard case let .data(dataSym) = symbol,
                 case let .defined(target) = dataSym.target
             else {
+                if let symbol = symbol, symbol.flags.isWeak {
+                    return 0
+                }
                 fatalError()
             }
             let startVA = dataSection.startVirtualAddress(for: target.segment)!

@@ -45,6 +45,8 @@ class OutputWriter {
             symbolTable: symbolTable, funcSection: funcSection
         )
 
+        synthesizeStartStopSymbols(dataSection: dataSection)
+
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
             importSection: importSection, funcSection: funcSection,
@@ -69,5 +71,24 @@ class OutputWriter {
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)
+    }
+    
+    func synthesizeStartStopSymbols(dataSection: DataSection) {
+        func addSynthesizedSymbol(name: String, address: Offset) {
+            let dummySegment = DataSegment(memoryIndex: 0)
+            dummySegment.info = DataSegment.Info(name: name, alignment: 1, flags: 0)
+            let segment = DataSymbol.DefinedSegment(
+                name: name, segment: dummySegment, context: "_linker"
+            )
+            let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+            _ = symbolTable.addDataSymbol(.defined(segment), flags: flags)
+            dataSection.setVirtualAddress(for: name, address)
+        }
+        
+        for (segment, address) in dataSection.segments {
+            let name = "__start_\(segment.name)"
+            print("Log: \(name) is synthesized")
+            addSynthesizedSymbol(name: name, address: address)
+        }
     }
 }

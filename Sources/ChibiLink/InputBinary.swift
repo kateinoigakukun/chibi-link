@@ -1,7 +1,6 @@
 class DataSegment {
     let memoryIndex: Index
     var offset: Offset!
-    var data: ArraySlice<UInt8>!
     var size: Size!
     var info: Info!
 
@@ -223,7 +222,6 @@ class LinkInfoCollector: BinaryReaderDelegate {
     func onDataSegmentData(_: Index, _ data: ArraySlice<UInt8>, _ size: Size) {
         let sec = currentSection!
         let segment = sec.dataSegments.last!
-        segment.data = data
         segment.size = size
     }
 
@@ -288,8 +286,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
             target = .defined(
                 DataSymbol.DefinedSegment(
                     name: name,
-                    binary: binary,
-                    segment: segment
+                    segment: segment,
+                    context: binary.filename
                 )
             )
         } else {

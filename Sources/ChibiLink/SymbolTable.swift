@@ -10,7 +10,7 @@ struct SymbolFlags {
 
 protocol DefinedTarget {
     var name: String { get }
-    var binary: InputBinary { get }
+    var context: String { get }
 }
 
 protocol UndefinedTarget {
@@ -22,6 +22,7 @@ struct IndexableTarget: DefinedTarget {
     let itemIndex: Index
     let name: String
     let binary: InputBinary
+    var context: String { binary.filename }
 }
 
 extension FunctionImport: UndefinedTarget {
@@ -76,8 +77,8 @@ final class GlobalSymbol: SymbolProtocol {
 final class DataSymbol: SymbolProtocol {
     struct DefinedSegment: DefinedTarget {
         let name: String
-        let binary: InputBinary
         let segment: DataSegment
+        let context: String
     }
 
     struct UndefinedSegment: UndefinedTarget {
@@ -241,8 +242,8 @@ class SymbolTable {
         case let (.defined(existing), .defined(newTarget)):
             fatalError("""
                 Error: symbol conflict: \(existing.name)
-                >>> defined in \(newTarget.binary.filename)
-                >>> defined in \(existing.binary.filename)
+                >>> defined in \(newTarget.context)
+                >>> defined in \(existing.context)
             """)
         }
     }
