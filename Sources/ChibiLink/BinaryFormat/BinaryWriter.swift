@@ -109,4 +109,14 @@ class BinaryWriter {
             try stream.write(relocate(chunk))
         }
     }
+    
+    func writeTable(type: ElementType, limits: Limits) throws {
+        try writeFixedUInt8(type.rawValue)
+        let hasMax = limits.max != nil
+        try writeFixedUInt8(hasMax ? 1 : 0)
+        try writeULEB128(UInt32(limits.initial))
+        if let max = limits.max {
+            try writeULEB128(UInt32(max))
+        }
+    }
 }

@@ -26,6 +26,7 @@ class OutputWriter {
         )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
+        let tableSection = TableSection(inputs: inputs)
         let memorySection = MemorySection(dataSection: dataSection)
 
         let relocator = Relocator(
@@ -41,6 +42,7 @@ class OutputWriter {
         try writeSection(typeSection)
         try writeSection(importSection)
         try writeSection(funcSection)
+        try writeSection(tableSection)
         try writeSection(memorySection)
         try writeSection(codeSection)
         try writeSection(dataSection)
