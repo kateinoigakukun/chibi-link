@@ -363,7 +363,8 @@ class BinaryReader {
             try readNameSection(sectionSize: sectionSize)
         case "linking":
             try readLinkingSection(sectionSize: sectionSize)
-        case _ where sectionName.hasPrefix("reloc."):
+        case _ where sectionName.hasPrefix("reloc.")
+                && !sectionName.hasPrefix("reloc..debug_"):
             try readRelocSection(sectionSize: sectionSize)
         default:
             print("Warning: Custom section '\(sectionName)' is currently not supported")
