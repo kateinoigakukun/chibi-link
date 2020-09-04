@@ -146,6 +146,10 @@ class SymbolTable {
         Array(symbolMap.values)
     }
 
+    func find(_ name: String) -> Symbol? {
+        return symbolMap[name]
+    }
+
     func addFunctionSymbol(_ target: FunctionSymbol.Target,
                            flags: SymbolFlags) -> FunctionSymbol
     {

@@ -41,6 +41,10 @@ class OutputWriter {
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
         )
 
+        let startSection = StartSection(
+            symbolTable: symbolTable, funcSection: funcSection
+        )
+
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
             importSection: importSection, funcSection: funcSection,
@@ -59,6 +63,9 @@ class OutputWriter {
         try writeSection(memorySection)
         try writeSection(globalSection)
         try writeSection(exportSection)
+        if let startSection = startSection {
+            try writeSection(startSection)
+        }
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)
