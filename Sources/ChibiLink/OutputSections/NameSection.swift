@@ -14,11 +14,15 @@ class NameSection: CustomSection {
         try writer.writeFixedUInt8(NameSectionSubsection.function.rawValue)
         let placeholder = try writer.writeSizePlaceholder()
         let contentStart = writer.offset
-        let count = inputs.reduce(0) { $0 + $1.debugNames.count }
+
+        let count = inputs.reduce(0) {
+            $0 + $1.debugNames.dropFirst($1.funcImports.count).count
+        }
         try writer.writeULEB128(UInt32(count))
         for binary in inputs {
             let base = funcSection.indexOffset(for: binary)!
-            for (index, name) in binary.debugNames.dropFirst(binary.funcImports.count).enumerated() {
+            let names = binary.debugNames.dropFirst(binary.funcImports.count)
+            for (index, name) in names.enumerated() {
                 try writer.writeIndex(base + index)
                 try writer.writeString(name)
             }

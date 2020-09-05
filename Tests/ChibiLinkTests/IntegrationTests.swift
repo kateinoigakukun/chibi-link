@@ -1,4 +1,4 @@
-import ChibiLink
+@testable import ChibiLink
 import XCTest
 
 class IntegrationTests: XCTestCase {
@@ -16,5 +16,8 @@ class IntegrationTests: XCTestCase {
         ]
         let output = experiment.appendingPathComponent("linked.wasm")
         try performLinker(inputs.map(\.path), output: output.path)
+        let bytes = try Data(contentsOf: output)
+        let reader = BinaryReader(bytes: Array(bytes), delegate: NopDelegate())
+        try reader.readModule()
     }
 }
