@@ -113,7 +113,7 @@ class OutputWriter {
 
         for (segment, address) in dataSection.segments {
             addSynthesizedSymbol(name: "__start_\(segment.name)", address: address)
-            addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address)
+            addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address + segment.size)
         }
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
