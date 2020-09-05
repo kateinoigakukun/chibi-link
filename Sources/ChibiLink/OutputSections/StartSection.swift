@@ -11,7 +11,7 @@ class StartSection: OutputSection {
             return nil
         }
         let base = funcSection.indexOffset(for: target.binary)!
-        index = base + target.itemIndex
+        index = base + target.itemIndex - target.binary.funcImports.count
         size = .fixed(encodeULEB128(UInt32(index)).count)
     }
 
