@@ -181,8 +181,14 @@ final class DataSymbol: SymbolProtocol {
         let name: String
         let module: String = "env"
     }
+    
+    struct Synthesized: SynthesizedTarget {
+        let name: String
+        let context: String
+        let address: Offset
+    }
 
-    typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment, Never>
+    typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment, Synthesized>
 
     fileprivate(set) var target: Target
     let flags: SymbolFlags
@@ -257,8 +263,10 @@ class SymbolTable {
     private var symbolMap: [String: Symbol] = [:]
     private var synthesizedGlobalIndexMap: [String: Index] = [:]
     private var synthesizedFunctionIndexMap: [String: Index] = [:]
+    private var synthesizedDataIndexMap: [String: Index] = [:]
     private var _synthesizedGlobals: [GlobalSymbol.Synthesized] = []
     private var _synthesizedFunctions: [FunctionSymbol.Synthesized] = []
+    private var _synthesizedData: [DataSymbol.Synthesized] = []
 
     func symbols() -> [Symbol] {
         Array(symbolMap.values)
@@ -375,6 +383,11 @@ class SymbolTable {
     func addDataSymbol(_ target: DataSymbol.Target,
                        flags: SymbolFlags) -> DataSymbol
     {
+        func indexSynthesizedData() {
+            guard case let .synthesized(target) = target else { return }
+            synthesizedDataIndexMap[target.name] = _synthesizedData.count
+            _synthesizedData.append(target)
+        }
         guard let existing = symbolMap[target.name] else {
             let newSymbol = DataSymbol(target: target, flags: flags)
             symbolMap[target.name] = .data(newSymbol)
@@ -388,19 +401,25 @@ class SymbolTable {
             """)
         }
         switch (existingData.target, target) {
-        case let (.undefined, .defined(newTarget)):
-            existingData.target = .defined(newTarget)
+        case (.undefined, .defined), (.undefined, .synthesized):
+            existingData.target = target
+            indexSynthesizedData()
             return existingData
-        case (.undefined, .undefined), (.defined, .undefined):
+        case (.undefined, .undefined), (.defined, .undefined),
+             (.synthesized, .undefined),
+             (.defined, .defined) where flags.isWeak,
+             (.synthesized, .synthesized) where flags.isWeak,
+             (.defined, .synthesized) where flags.isWeak,
+             (.synthesized, .defined) where flags.isWeak:
             return existingData
-        case (.defined, .defined) where flags.isWeak:
-            return existingData
-        case let (.defined(existing), .defined(newTarget)):
-            fatalError("""
-                Error: symbol conflict: \(existing.name)
-                >>> defined in \(newTarget.context)
-                >>> defined in \(existing.context)
-            """)
+        case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            reportSymbolConflict(
+                name: existing.name,
+                oldContext: existing.context, newContext: newTarget.context
+            )
         }
     }
 }

@@ -89,16 +89,20 @@ class Relocator {
              .memoryAddressRelSLEB64,
              .memoryAddressI32,
              .memoryAddressI64:
-            guard case let .data(dataSym) = symbol,
-                case let .defined(target) = dataSym.target
-            else {
-                if let symbol = symbol, symbol.flags.isWeak {
-                    return 0
-                }
+            guard case let .data(dataSym) = symbol else {
                 fatalError()
             }
-            let startVA = dataSection.startVirtualAddress(for: target.segment)!
-            return UInt64(startVA + Int(relocation.addend))
+            switch dataSym.target {
+            case let .defined(target):
+                let startVA = dataSection.startVirtualAddress(for: target.segment)!
+                return UInt64(startVA + Int(relocation.addend))
+            case .undefined where dataSym.flags.isWeak:
+                return 0
+            case .undefined:
+                fatalError()
+            case let .synthesized(target):
+                return UInt64(target.address)
+            }
         case .typeIndexLEB:
             // for R_WASM_TYPE_INDEX_LEB, symbolIndex means the index for the type
             return UInt64(typeSection.indexOffset(for: binary)! + relocation.symbolIndex)
@@ -158,6 +162,10 @@ class Relocator {
             currentValue = Int(decodeLittleEndian(bytes[location...], UInt32.self))
         case .LE64Bit:
             currentValue = Int(decodeLittleEndian(bytes[location...], UInt64.self))
+        }
+        let thePoint = 0x40e8cc
+        if thePoint == location {
+            print("Debug: Hit breakpoint")
         }
         let value = translate(relocation: relocation, binary: binary, current: currentValue)
         func writeBytes(_ result: [UInt8]) {

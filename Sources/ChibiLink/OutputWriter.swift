@@ -100,14 +100,9 @@ class OutputWriter {
 
     func synthesizeDataSymbols(dataSection: DataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
-            let dummySegment = DataSegment(memoryIndex: 0)
-            dummySegment.info = DataSegment.Info(name: name, alignment: 1, flags: 0)
-            let segment = DataSymbol.DefinedSegment(
-                name: name, segment: dummySegment, context: "_linker"
-            )
+            let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-            _ = symbolTable.addDataSymbol(.defined(segment), flags: flags)
-            dataSection.setVirtualAddress(for: name, address)
+            _ = symbolTable.addDataSymbol(.synthesized(target), flags: flags)
             print("Log: \(name) is synthesized")
         }
 

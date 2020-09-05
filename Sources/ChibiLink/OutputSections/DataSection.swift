@@ -42,15 +42,10 @@ class DataSection: VectorSection {
     )
     let segments: [LocatedSegment]
     let initialMemorySize: Size
-    private var outputOffsetByInputSegName: [String: Offset]
+    private let outputOffsetByInputSegName: [String: Offset]
 
     func startVirtualAddress(for segment: DataSegment) -> Offset? {
         return outputOffsetByInputSegName[segment.info.name]
-    }
-
-    // For linker synthesized symbols
-    func setVirtualAddress(for name: String, _ address: Offset) {
-        outputOffsetByInputSegName[name] = address
     }
 
     init(sections: [Section]) {
