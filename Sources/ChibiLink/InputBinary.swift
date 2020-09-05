@@ -299,7 +299,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
                 DataSymbol.DefinedSegment(
                     name: name,
                     segment: segment,
-                    context: binary.filename
+                    context: binary.filename,
+                    binary: binary
                 )
             )
         } else {

@@ -42,10 +42,16 @@ class DataSection: VectorSection {
     )
     let segments: [LocatedSegment]
     let initialMemorySize: Size
-    private let outputOffsetByInputSegName: [String: Offset]
+    private let outputOffsetByInputSegName: [OffsetKey: Offset]
+    
+    private struct OffsetKey: Hashable {
+        let filename: String
+        let name: String
+    }
 
-    func startVirtualAddress(for segment: DataSegment) -> Offset? {
-        return outputOffsetByInputSegName[segment.info.name]
+    func startVirtualAddress(for segment: DataSegment, binary: InputBinary) -> Offset? {
+        let key = OffsetKey(filename: binary.filename, name: segment.info.name)
+        return outputOffsetByInputSegName[key]
     }
 
     init(sections: [Section]) {
@@ -70,7 +76,7 @@ class DataSection: VectorSection {
                     outSegment = OutputSegment(name: outputName)
                     segmentMap[outputName] = outSegment
                 }
-                inputsByOutput[outputName, default: []].append(inputName)
+//                inputsByOutput[outputName, default: []].append(inputName)
 
                 var segmentRelocs: [Relocation] = []
                 while let headReloc = relocs.last,
@@ -86,11 +92,11 @@ class DataSection: VectorSection {
         let segmentList = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
         var segments: [LocatedSegment] = []
         var memoryOffset: Offset = 0
-        var outputOffsetByInputSegName: [String: Offset] = [:]
+        var outputOffsetByInputSegName: [OffsetKey: Offset] = [:]
         for segment in segmentList {
-            let inputs = inputsByOutput[segment.name]!
-            for input in inputs {
-                outputOffsetByInputSegName[input] = memoryOffset
+            for chunk in segment.chunks {
+                let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
+                outputOffsetByInputSegName[key] = memoryOffset
             }
             memoryOffset = align(memoryOffset, to: segment.alignment)
             segments.append((segment, memoryOffset))
