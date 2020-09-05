@@ -21,7 +21,8 @@ class OutputWriter {
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
-        synthesizeSymbols(dataSection: dataSection)
+        synthesizeDataSymbols(dataSection: dataSection)
+        let (synthesizedGlobals, dummyBinary) = synthesizeGlobalSymbols()
 
         let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
@@ -29,7 +30,10 @@ class OutputWriter {
             typeSection: typeSection, importSection: importSection
         )
         let globalSection = GlobalSection(
-            sections: sectionsMap[.global] ?? [], importSection: importSection
+            sections: sectionsMap[.global] ?? [],
+            synthesized: synthesizedGlobals,
+            dummyBinary: dummyBinary,
+            importSection: importSection
         )
         let exportSection = ExportSection(
             symbolTable: symbolTable,
@@ -81,7 +85,7 @@ class OutputWriter {
         #endif
     }
 
-    func synthesizeSymbols(dataSection: DataSection) {
+    func synthesizeDataSymbols(dataSection: DataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
             let dummySegment = DataSegment(memoryIndex: 0)
             dummySegment.info = DataSegment.Info(name: name, alignment: 1, flags: 0)
@@ -99,5 +103,23 @@ class OutputWriter {
             addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address)
         }
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
+    }
+
+    func synthesizeGlobalSymbols() -> ([GlobalSection.Synthesized], InputBinary) {
+        let dummyBinary = InputBinary(filename: "_linker.wasm", data: [])
+        func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) -> GlobalSection.Synthesized {
+            let global = GlobalSection.Synthesized(type: .i32, mutable: mutable, value: value)
+            let target = IndexableTarget(
+                itemIndex: 0, name: name, binary: dummyBinary
+            )
+            let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+            _ = symbolTable.addGlobalSymbol(.defined(target), flags: flags)
+            print("Log: \(name) is synthesized")
+            return global
+        }
+        let globals = [
+            addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: 0)
+        ]
+        return (globals, dummyBinary)
     }
 }
