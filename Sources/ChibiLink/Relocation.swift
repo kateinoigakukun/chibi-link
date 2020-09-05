@@ -57,6 +57,18 @@ class Relocator {
         return base + offset
     }
 
+    func globalIndex(for target: IndexableTarget) -> Index {
+        let importCount = target.binary.globalImports.count
+        let isImported = target.itemIndex < importCount
+        if isImported {
+            let anImport = target.binary.globalImports[target.itemIndex]
+            return importSection.importIndex(for: anImport)!
+        }
+        let offset = target.itemIndex - importCount
+        let base = globalSection.indexOffset(for: target.binary)!
+        return base + offset
+    }
+
     func translate(relocation: Relocation, binary: InputBinary, current: Int) -> UInt64 {
         var symbol: Symbol?
         if relocation.type != .typeIndexLEB {
@@ -106,7 +118,7 @@ class Relocator {
             }
             switch globalSym.target {
             case let .defined(target):
-                return UInt64(globalSection.indexOffset(for: target.binary)! + target.itemIndex)
+                return UInt64(globalIndex(for: target))
             case let .undefined(globalImport):
                 return UInt64(importSection.importIndex(for: globalImport)!)
             }
