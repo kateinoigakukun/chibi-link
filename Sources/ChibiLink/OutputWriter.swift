@@ -27,7 +27,7 @@ class OutputWriter {
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
         synthesizeDataSymbols(dataSection: dataSection)
-        synthesizeGlobalSymbols()
+        synthesizeStackPointer(dataSection: dataSection)
 
         let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
@@ -87,6 +87,16 @@ class OutputWriter {
             try writeSection(nameSectino)
         #endif
     }
+    
+    func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) {
+        let target = GlobalSymbol.Synthesized(
+            name: name, context: "_linker", type: .i32,
+            mutable: mutable, value: value
+        )
+        let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+        _ = symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
+        print("Log: \(name) is synthesized")
+    }
 
     func synthesizeDataSymbols(dataSection: DataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
@@ -108,17 +118,11 @@ class OutputWriter {
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
 
-    func synthesizeGlobalSymbols() {
-        func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) {
-            let target = GlobalSymbol.Synthesized(
-                name: name, context: "_linker", type: .i32,
-                mutable: mutable, value: value
-            )
-            let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-            _ = symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
-            print("Log: \(name) is synthesized")
-        }
-        addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: 0)
+    func synthesizeStackPointer(dataSection: DataSection) {
+        // Stack area is allocated **after** static data
+        let stackAlignment = 16
+        let stackStart = Int32(align(dataSection.initialMemorySize + PAGE_SIZE, to: stackAlignment))
+        addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: stackStart)
     }
 
     func synthesizeFunctionSymbols() {

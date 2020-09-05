@@ -5,7 +5,9 @@ class MemorySection: VectorSection {
     let pagesCount: Int
 
     init(dataSection: DataSection) {
-        pagesCount = align(dataSection.initialMemorySize, to: PAGE_SIZE) / PAGE_SIZE
+        // static data size + stack area size
+        let size = dataSection.initialMemorySize + PAGE_SIZE
+        pagesCount = align(size, to: PAGE_SIZE) / PAGE_SIZE
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
