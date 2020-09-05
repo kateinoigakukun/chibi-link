@@ -245,12 +245,12 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: FunctionSymbol.Target
-        if let name = name {
+        let flags = SymbolFlags(rawValue: rawFlags)
+        if let name = name, !flags.isUndefined {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.funcImports[itemIndex])
         }
-        let flags = SymbolFlags(rawValue: rawFlags)
         let symbol: FunctionSymbol
         if flags.isLocal {
             symbol = FunctionSymbol(target: target, flags: flags)
@@ -262,12 +262,12 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onGlobalSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
         let target: GlobalSymbol.Target
-        if let name = name {
+        let flags = SymbolFlags(rawValue: rawFlags)
+        if let name = name, !flags.isUndefined {
             target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
         } else {
             target = .undefined(binary.globalImports[itemIndex])
         }
-        let flags = SymbolFlags(rawValue: rawFlags)
         let symbol: GlobalSymbol
         if flags.isLocal {
             symbol = GlobalSymbol(target: target, flags: flags)
@@ -281,7 +281,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
                       _ content: (segmentIndex: Index, offset: Offset, size: Size)?)
     {
         let target: DataSymbol.Target
-        if let content = content {
+        let flags = SymbolFlags(rawValue: rawFlags)
+        if let content = content, !flags.isUndefined {
             let segment = dataSection.dataSegments[content.segmentIndex]
             target = .defined(
                 DataSymbol.DefinedSegment(
@@ -293,8 +294,6 @@ class LinkInfoCollector: BinaryReaderDelegate {
         } else {
             target = .undefined(DataSymbol.UndefinedSegment(name: name))
         }
-
-        let flags = SymbolFlags(rawValue: rawFlags)
         let symbol: DataSymbol
         if flags.isLocal {
             symbol = DataSymbol(target: target, flags: flags)

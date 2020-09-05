@@ -40,6 +40,13 @@ struct ImportSeciton: VectorSection {
             importIndexMap[key] = imports.count
             imports.append(newImport)
         }
+        #if DEBUG
+        print("Debug: Print all undefined symbols")
+        for symbol in symbolTable.symbols() {
+            guard symbol.isUndefined else { continue }
+            print(symbol.name)
+        }
+        #endif
         for symbol in symbolTable.symbols() {
             switch symbol {
             case let .function(symbol): addImport(symbol)

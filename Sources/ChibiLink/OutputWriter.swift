@@ -19,6 +19,10 @@ class OutputWriter {
             sectionsMap[sec.sectionCode, default: []].append(sec)
         }
         let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
+        let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+
+        synthesizeSymbols(dataSection: dataSection)
+
         let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
             sections: sectionsMap[.function] ?? [],
@@ -33,7 +37,6 @@ class OutputWriter {
             globalSection: globalSection
         )
         exportSection.addExport(ExportSection.Export(kind: .memory(0), name: "memory"))
-        let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
         let tableSection = TableSection(inputs: inputs)
         let memorySection = MemorySection(dataSection: dataSection)
@@ -48,8 +51,6 @@ class OutputWriter {
         #if DEBUG
         let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
         #endif
-
-        synthesizeSymbols(dataSection: dataSection)
 
         let relocator = Relocator(
             symbolTable: symbolTable, typeSection: typeSection,
@@ -90,12 +91,12 @@ class OutputWriter {
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
             _ = symbolTable.addDataSymbol(.defined(segment), flags: flags)
             dataSection.setVirtualAddress(for: name, address)
+            print("Log: \(name) is synthesized")
         }
 
         for (segment, address) in dataSection.segments {
-            let name = "__start_\(segment.name)"
-            print("Log: \(name) is synthesized")
-            addSynthesizedSymbol(name: name, address: address)
+            addSynthesizedSymbol(name: "__start_\(segment.name)", address: address)
+            addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address)
         }
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }

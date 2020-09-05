@@ -6,6 +6,7 @@ struct SymbolFlags {
     private var visibility: UInt32 { rawValue & SYMBOL_VISIBILITY_MASK }
     var isHidden: Bool { visibility == SYMBOL_VISIBILITY_HIDDEN }
     var isExported: Bool { rawValue & SYMBOL_EXPORTED != 0 }
+    var isUndefined: Bool { rawValue & SYMBOL_FLAG_UNDEFINED != 0 }
 }
 
 protocol DefinedTarget {
@@ -112,6 +113,21 @@ enum Symbol {
             return symbol.target.name
         }
     }
+
+    #if DEBUG
+    var function: FunctionSymbol? {
+        guard case let .function(sym) = self else { return nil }
+        return sym
+    }
+    var global: GlobalSymbol? {
+        guard case let .global(sym) = self else { return nil }
+        return sym
+    }
+    var data: DataSymbol? {
+        guard case let .data(sym) = self else { return nil }
+        return sym
+    }
+    #endif
 
     var isUndefined: Bool {
         func isUndef<T, U>(_ target: SymbolTarget<T, U>) -> Bool {
