@@ -34,14 +34,30 @@ extension GlobalImport: UndefinedTarget {
     var name: String { field }
 }
 
-enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget> {
+protocol SynthesizedTarget: DefinedTarget {
+}
+
+extension Never: SynthesizedTarget {
+    var name: String {
+        switch self {
+        }
+    }
+    var context: String {
+        switch self {
+        }
+    }
+}
+
+enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget, Synthesized: SynthesizedTarget> {
     case defined(Target)
     case undefined(Import)
+    case synthesized(Synthesized)
 
     var name: String {
         switch self {
         case let .defined(target): return target.name
         case let .undefined(target): return target.name
+        case let .synthesized(target): return target.name
         }
     }
 }
@@ -49,13 +65,17 @@ enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget> {
 protocol SymbolProtocol {
     associatedtype Defined: DefinedTarget
     associatedtype Import: UndefinedTarget
-    typealias Target = SymbolTarget<Defined, Import>
+    associatedtype Synthesized: SynthesizedTarget
+    typealias Target = SymbolTarget<Defined, Import, Synthesized>
     var target: Target { get }
     var flags: SymbolFlags { get }
 }
 
 final class FunctionSymbol: SymbolProtocol {
-    typealias Target = SymbolTarget<IndexableTarget, FunctionImport>
+    typealias Defined = IndexableTarget
+    typealias Import = FunctionImport
+    typealias Synthesized = Never
+
     fileprivate(set) var target: Target
     let flags: SymbolFlags
     init(target: Target, flags: SymbolFlags) {
@@ -65,7 +85,15 @@ final class FunctionSymbol: SymbolProtocol {
 }
 
 final class GlobalSymbol: SymbolProtocol {
-    typealias Target = SymbolTarget<IndexableTarget, GlobalImport>
+    typealias Defined = IndexableTarget
+    typealias Import = GlobalImport
+    struct Synthesized: SynthesizedTarget {
+        let name: String
+        let context: String
+        let type: ValueType
+        let mutable: Bool
+        let value: Int32
+    }
     fileprivate(set) var target: Target
     let flags: SymbolFlags
 
@@ -87,7 +115,7 @@ final class DataSymbol: SymbolProtocol {
         let module: String = "env"
     }
 
-    typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment>
+    typealias Target = SymbolTarget<DefinedSegment, UndefinedSegment, Never>
 
     fileprivate(set) var target: Target
     let flags: SymbolFlags
@@ -130,7 +158,7 @@ enum Symbol {
     #endif
 
     var isUndefined: Bool {
-        func isUndef<T, U>(_ target: SymbolTarget<T, U>) -> Bool {
+        func isUndef<T1, T2, T3>(_ target: SymbolTarget<T1, T2, T3>) -> Bool {
             guard case .undefined = target else { return false }
             return true
         }
@@ -158,9 +186,19 @@ enum Symbol {
 
 class SymbolTable {
     private var symbolMap: [String: Symbol] = [:]
+    private var synthesizedGlobalIndexMap: [String: Index] = [:]
+    private var _synthesizedGlobals: [GlobalSymbol.Synthesized] = []
 
     func symbols() -> [Symbol] {
         Array(symbolMap.values)
+    }
+
+    func synthesizedGlobalIndex(for target: GlobalSymbol.Synthesized) -> Index? {
+        synthesizedGlobalIndexMap[target.name]
+    }
+    
+    func synthesizedGlobals() -> [GlobalSymbol.Synthesized] {
+        return _synthesizedGlobals
     }
 
     func find(_ name: String) -> Symbol? {
@@ -203,6 +241,13 @@ class SymbolTable {
     func addGlobalSymbol(_ target: GlobalSymbol.Target,
                          flags: SymbolFlags) -> GlobalSymbol
     {
+        
+        defer {
+            if case let .synthesized(target) = target {
+                synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
+                _synthesizedGlobals.append(target)
+            }
+        }
         guard let existing = symbolMap[target.name] else {
             let newSymbol = GlobalSymbol(target: target, flags: flags)
             symbolMap[target.name] = .global(newSymbol)
@@ -216,19 +261,24 @@ class SymbolTable {
             """)
         }
         switch (existingGlobal.target, target) {
-        case let (.undefined, .defined(newTarget)):
-            existingGlobal.target = .defined(newTarget)
+        case (.undefined, .defined), (.undefined, .synthesized):
+            existingGlobal.target = target
             return existingGlobal
-        case (.undefined, .undefined), (.defined, .undefined):
+        case (.undefined, .undefined), (.defined, .undefined),
+             (.synthesized, .undefined),
+             (.defined, .defined) where flags.isWeak,
+             (.synthesized, .synthesized) where flags.isWeak,
+             (.defined, .synthesized) where flags.isWeak,
+             (.synthesized, .defined) where flags.isWeak:
             return existingGlobal
-        case (.defined, .defined) where flags.isWeak:
-            return existingGlobal
-        case let (.defined(existing), .defined(newTarget)):
-            fatalError("""
-                Error: symbol conflict: \(existing.name)
-                >>> defined in \(newTarget.binary.filename)
-                >>> defined in \(existing.binary.filename)
-            """)
+        case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            reportSymbolConflict(
+                name: existing.name,
+                oldContext: existing.context, newContext: newTarget.context
+            )
         }
     }
 
@@ -263,4 +313,12 @@ class SymbolTable {
             """)
         }
     }
+}
+
+private func reportSymbolConflict(name: String, oldContext: String, newContext: String) -> Never {
+    fatalError("""
+        Error: symbol conflict: \(name)
+        >>> defined in \(oldContext)
+        >>> defined in \(newContext)
+    """)
 }

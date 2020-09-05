@@ -16,28 +16,35 @@ struct ImportSeciton: VectorSection {
     private(set) var globalCount: Int = 0
 
     private(set) var imports: [Import] = []
-    private var importIndexMap: [String: Index] = [:]
+    private var importFuncIndexMap: [String: Index] = [:]
+    private var importGlobalIndexMap: [String: Index] = [:]
 
-    mutating func addImport(_ import: Import) {
-        imports.append(`import`)
+    func importIndex(for target: FunctionImport) -> Index? {
+        let key = uniqueImportKey(module: target.module, field: target.name)
+        return importFuncIndexMap[key]
     }
 
-    func importIndex<T: UndefinedTarget>(for target: T) -> Index? {
+    func importIndex(for target: GlobalImport) -> Index? {
         let key = uniqueImportKey(module: target.module, field: target.name)
-        return importIndexMap[key]
+        return importGlobalIndexMap[key]
     }
 
     init(symbolTable: SymbolTable, typeSection: TypeSection) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol, typeSection: typeSection) else { return }
-            switch newImport.kind {
-            case .global: globalCount += 1
-            case .function: functionCount += 1
-            }
+            
             let key = uniqueImportKey(
                 module: newImport.module, field: newImport.field
             )
-            importIndexMap[key] = imports.count
+            switch newImport.kind {
+            case .global:
+                importGlobalIndexMap[key] = globalCount
+                globalCount += 1
+            case .function:
+                importFuncIndexMap[key] = functionCount
+                functionCount += 1
+            }
+
             imports.append(newImport)
         }
         #if DEBUG
@@ -72,7 +79,7 @@ private func uniqueImportKey(module: String, field: String) -> String {
 private func createImport<S>(_ symbol: S, typeSection: TypeSection) -> ImportSeciton.Import? where S: SymbolProtocol {
     typealias Import = ImportSeciton.Import
     switch symbol.target {
-    case .defined: return nil
+    case .defined, .synthesized: return nil
     case let .undefined(undefined as FunctionImport):
         let typeBaseIndex = typeSection.indexOffset(for: undefined.selfBinary!)!
         let signature = typeBaseIndex + undefined.signatureIdx

@@ -121,6 +121,8 @@ class Relocator {
                 return UInt64(globalIndex(for: target))
             case let .undefined(globalImport):
                 return UInt64(importSection.importIndex(for: globalImport)!)
+            case let .synthesized(target):
+                return UInt64(importSection.globalCount + symbolTable.synthesizedGlobalIndex(for: target)!)
             }
         case .functionOffsetI32:
             guard case let .function(funcSym) = symbol,

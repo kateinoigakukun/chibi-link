@@ -22,7 +22,7 @@ class OutputWriter {
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
         synthesizeDataSymbols(dataSection: dataSection)
-        let (synthesizedGlobals, dummyBinary) = synthesizeGlobalSymbols()
+        synthesizeGlobalSymbols()
 
         let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
@@ -31,9 +31,7 @@ class OutputWriter {
         )
         let globalSection = GlobalSection(
             sections: sectionsMap[.global] ?? [],
-            synthesized: synthesizedGlobals,
-            dummyBinary: dummyBinary,
-            importSection: importSection
+            importSection: importSection, symbolTable: symbolTable
         )
         let exportSection = ExportSection(
             symbolTable: symbolTable,
@@ -105,21 +103,16 @@ class OutputWriter {
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
 
-    func synthesizeGlobalSymbols() -> ([GlobalSection.Synthesized], InputBinary) {
-        let dummyBinary = InputBinary(filename: "_linker.wasm", data: [])
-        func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) -> GlobalSection.Synthesized {
-            let global = GlobalSection.Synthesized(type: .i32, mutable: mutable, value: value)
-            let target = IndexableTarget(
-                itemIndex: 0, name: name, binary: dummyBinary
+    func synthesizeGlobalSymbols() {
+        func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) {
+            let target = GlobalSymbol.Synthesized(
+                name: name, context: "_linker", type: .i32,
+                mutable: mutable, value: value
             )
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-            _ = symbolTable.addGlobalSymbol(.defined(target), flags: flags)
+            _ = symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
             print("Log: \(name) is synthesized")
-            return global
         }
-        let globals = [
-            addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: 0)
-        ]
-        return (globals, dummyBinary)
+        addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: 0)
     }
 }
