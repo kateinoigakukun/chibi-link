@@ -78,7 +78,6 @@ private func uniqueImportKey(module: String, field: String) -> String {
 
 private func createImport<S>(_ symbol: S, typeSection: TypeSection) -> ImportSeciton.Import? where S: SymbolProtocol {
     typealias Import = ImportSeciton.Import
-    guard !symbol.flags.isWeak else { return nil }
     switch symbol.target {
     case .defined, .synthesized: return nil
     case let .undefined(undefined as FunctionImport):

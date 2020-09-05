@@ -109,8 +109,6 @@ class Relocator {
             switch funcSym.target {
             case let .defined(target):
                 return UInt64(functionIndex(for: target))
-            case .undefined where funcSym.flags.isWeak:
-                return 0
             case let .undefined(funcImport):
                 return UInt64(importSection.importIndex(for: funcImport)!)
             case let .synthesized(target):
