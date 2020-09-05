@@ -96,7 +96,7 @@ class DataSection: VectorSection {
         for segment in segmentList {
             for chunk in segment.chunks {
                 let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
-                outputOffsetByInputSegName[key] = memoryOffset
+                outputOffsetByInputSegName[key] = memoryOffset + chunk.offset
             }
             memoryOffset = align(memoryOffset, to: segment.alignment)
             segments.append((segment, memoryOffset))
