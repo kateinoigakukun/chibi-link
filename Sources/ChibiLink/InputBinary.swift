@@ -194,7 +194,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.tableElemSize = limits.initial
     }
 
-    func onElementSegmentFunctionIndexCount(_ segmentIndex: Index, _ indexCount: Int) {
+    func onElementSegmentFunctionIndexCount(_: Index, _ indexCount: Int) {
         // FIXME: Do not assume that table is only one
         let sec = currentSection!
         let delta = state.offset - sec.payloadOffset!

@@ -32,7 +32,7 @@ struct ImportSeciton: VectorSection {
     init(symbolTable: SymbolTable, typeSection: TypeSection) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol, typeSection: typeSection) else { return }
-            
+
             let key = uniqueImportKey(
                 module: newImport.module, field: newImport.field
             )
@@ -48,11 +48,11 @@ struct ImportSeciton: VectorSection {
             imports.append(newImport)
         }
         #if DEBUG
-        print("Debug: Print all undefined symbols")
-        for symbol in symbolTable.symbols() {
-            guard symbol.isUndefined else { continue }
-            print(symbol.name)
-        }
+            print("Debug: Print all undefined symbols")
+            for symbol in symbolTable.symbols() {
+                guard symbol.isUndefined else { continue }
+                print(symbol.name)
+            }
         #endif
         for symbol in symbolTable.symbols() {
             switch symbol {

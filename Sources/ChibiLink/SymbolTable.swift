@@ -34,17 +34,15 @@ extension GlobalImport: UndefinedTarget {
     var name: String { field }
 }
 
-protocol SynthesizedTarget: DefinedTarget {
-}
+protocol SynthesizedTarget: DefinedTarget {}
 
 extension Never: SynthesizedTarget {
     var name: String {
-        switch self {
-        }
+        switch self {}
     }
+
     var context: String {
-        switch self {
-        }
+        switch self {}
     }
 }
 
@@ -94,6 +92,7 @@ final class GlobalSymbol: SymbolProtocol {
         let mutable: Bool
         let value: Int32
     }
+
     fileprivate(set) var target: Target
     let flags: SymbolFlags
 
@@ -143,18 +142,20 @@ enum Symbol {
     }
 
     #if DEBUG
-    var function: FunctionSymbol? {
-        guard case let .function(sym) = self else { return nil }
-        return sym
-    }
-    var global: GlobalSymbol? {
-        guard case let .global(sym) = self else { return nil }
-        return sym
-    }
-    var data: DataSymbol? {
-        guard case let .data(sym) = self else { return nil }
-        return sym
-    }
+        var function: FunctionSymbol? {
+            guard case let .function(sym) = self else { return nil }
+            return sym
+        }
+
+        var global: GlobalSymbol? {
+            guard case let .global(sym) = self else { return nil }
+            return sym
+        }
+
+        var data: DataSymbol? {
+            guard case let .data(sym) = self else { return nil }
+            return sym
+        }
     #endif
 
     var isUndefined: Bool {
@@ -196,7 +197,7 @@ class SymbolTable {
     func synthesizedGlobalIndex(for target: GlobalSymbol.Synthesized) -> Index? {
         synthesizedGlobalIndexMap[target.name]
     }
-    
+
     func synthesizedGlobals() -> [GlobalSymbol.Synthesized] {
         return _synthesizedGlobals
     }
@@ -241,7 +242,6 @@ class SymbolTable {
     func addGlobalSymbol(_ target: GlobalSymbol.Target,
                          flags: SymbolFlags) -> GlobalSymbol
     {
-        
         func indexSynthesizedGlobal() {
             guard case let .synthesized(target) = target else { return }
             synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count

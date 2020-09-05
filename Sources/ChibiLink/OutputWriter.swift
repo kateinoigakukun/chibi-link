@@ -51,7 +51,7 @@ class OutputWriter {
         )
 
         #if DEBUG
-        let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
+            let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
         #endif
 
         let relocator = Relocator(
@@ -79,7 +79,7 @@ class OutputWriter {
         try writeSection(codeSection)
         try writeSection(dataSection)
         #if DEBUG
-        try writeSection(nameSectino)
+            try writeSection(nameSectino)
         #endif
     }
 
