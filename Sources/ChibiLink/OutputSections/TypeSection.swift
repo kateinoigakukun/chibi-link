@@ -1,38 +1,38 @@
 class TypeSection: VectorSection {
     var section: BinarySection { .type }
-    let size: OutputSectionSize
+    var size: OutputSectionSize { .unknown }
     let count: Size
 
     private let sections: [Section]
     private let indexOffsetByFileName: [String: Offset]
-
-    func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
-        for section in sections {
-            let offset = section.payloadOffset!
-            let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
-            try writer.writeBytes(bytes)
-        }
-    }
+    private let symbolTable: SymbolTable
 
     func indexOffset(for binary: InputBinary) -> Offset? {
         return indexOffsetByFileName[binary.filename]
     }
 
-    init(sections: [Section]) {
-        var totalSize: Size = 0
-        var totalCount: Int = 0
+    init(sections: [Section], symbolTable: SymbolTable) {
+        var totalCount: Int = symbolTable.synthesizedFuncs().count
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
             assert(section.sectionCode == .type)
             indexOffsets[section.binary!.filename] = totalCount
-            totalSize += section.payloadSize!
             totalCount += section.count!
         }
-        let lengthBytes = encodeULEB128(UInt32(totalCount))
-        totalSize += lengthBytes.count
-        size = .fixed(totalSize)
         count = totalCount
         self.sections = sections
+        self.symbolTable = symbolTable
         indexOffsetByFileName = indexOffsets
+    }
+
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+        for synthesizedFunc in symbolTable.synthesizedFuncs() {
+            try synthesizedFunc.writeSignature(writer: writer)
+        }
+        for section in sections {
+            let offset = section.payloadOffset!
+            let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
+            try writer.writeBytes(bytes)
+        }
     }
 }

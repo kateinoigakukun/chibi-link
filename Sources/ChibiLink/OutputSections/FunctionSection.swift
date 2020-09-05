@@ -8,9 +8,10 @@ class FunctionSection: VectorSection {
 
     init(sections: [Section],
          typeSection: TypeSection,
-         importSection: ImportSeciton)
-    {
-        var totalCount = 0
+         importSection: ImportSeciton,
+         symbolTable: SymbolTable
+    ) {
+        var totalCount = symbolTable.synthesizedFuncs().count
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
             indexOffsets[section.binary!.filename] = totalCount + importSection.functionCount
@@ -26,7 +27,11 @@ class FunctionSection: VectorSection {
         return indexOffsetByFileName[binary.filename]
     }
 
-    func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
+    func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+        // Synthesized functions and types are always on the head of sections
+        for i in 0..<relocator.symbolTable.synthesizedFuncs().count {
+            try writer.writeIndex(i)
+        }
         // Read + Write + Relocate type indexes
         for section in sections {
             let payloadStart = section.payloadOffset!

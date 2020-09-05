@@ -98,6 +98,12 @@ class Export {
     }
 }
 
+struct InitFunction {
+    let priority: UInt32
+    let symbolIndex: Index
+    weak var binary: InputBinary!
+}
+
 class InputBinary {
     let filename: String
     let data: [UInt8]
@@ -113,6 +119,7 @@ class InputBinary {
 
     fileprivate(set) var debugNames: [String] = []
     fileprivate(set) var symbols: [Symbol] = []
+    fileprivate(set) var initFunctions: [InitFunction] = []
 
     init(filename: String, data: [UInt8]) {
         self.filename = filename
@@ -310,5 +317,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
     func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
         let info = DataSegment.Info(name: name, alignment: alignment, flags: flags)
         dataSection.dataSegments[index].info = info
+    }
+
+    func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {
+        let initFn = InitFunction(priority: priority, symbolIndex: initSymbol, binary: binary)
+        binary.initFunctions.append(initFn)
     }
 }

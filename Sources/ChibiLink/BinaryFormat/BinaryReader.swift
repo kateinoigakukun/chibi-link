@@ -52,6 +52,7 @@ protocol BinaryReaderDelegate {
     )
     func onSegmentInfo(_ index: Index, _ name: String,
                        _ alignment: Int, _ flags: UInt32)
+    func onInitFunction(_ initSymbol: Index, _ priority: UInt32)
 }
 
 class BinaryReader {
@@ -435,6 +436,8 @@ class BinaryReader {
                 readSymbolTable()
             case .segmentInfo:
                 readSegmentInfo()
+            case .initFunctions:
+                readInitFunctions()
             default:
                 if let linkingType = linkingType {
                     print("Warning: Linking subsection '\(String(describing: linkingType))' is not supported now")
@@ -495,6 +498,15 @@ class BinaryReader {
             let alignment = readU32Leb128()
             let flags = readU32Leb128()
             delegate.onSegmentInfo(i, name, Int(alignment), flags)
+        }
+    }
+    
+    func readInitFunctions() {
+        let count = Int(readU32Leb128())
+        for _ in 0 ..< count {
+            let priority = readU32Leb128()
+            let symbolIndex = readIndex()
+            delegate.onInitFunction(symbolIndex, priority)
         }
     }
 }

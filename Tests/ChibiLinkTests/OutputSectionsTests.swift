@@ -18,14 +18,14 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputS
     for sec in inputs.lazy.flatMap(\.sections) {
         sectionsMap[sec.sectionCode, default: []].append(sec)
     }
-    let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
+    let typeSection = TypeSection(sections: sectionsMap[.type] ?? [], symbolTable: symtab)
     let importSection = ImportSeciton(symbolTable: symtab, typeSection: typeSection)
     let funcSection = FunctionSection(
         sections: sectionsMap[.function] ?? [],
-        typeSection: typeSection, importSection: importSection
+        typeSection: typeSection, importSection: importSection, symbolTable: symtab
     )
     let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
-    let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
+    let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
     let tableSection = TableSection(inputs: inputs)
     let memorySection = MemorySection(dataSection: dataSection)
     let elemSection = ElementSection(

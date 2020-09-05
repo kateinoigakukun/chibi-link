@@ -1,24 +1,23 @@
 class CodeSection: VectorSection {
     var section: BinarySection { .code }
-    let size: OutputSectionSize
+    var size: OutputSectionSize { .unknown }
     let count: Int
     let sections: [Section]
 
-    init(sections: [Section]) {
-        var totalSize = 0
-        var totalCount = 0
+    init(sections: [Section], symbolTable: SymbolTable) {
+        var totalCount = symbolTable.synthesizedFuncs().count
         for section in sections {
-            totalSize += section.payloadSize!
             totalCount += section.count!
         }
-        let lengthBytes = encodeULEB128(UInt32(totalCount))
-        totalSize += lengthBytes.count
+
         self.sections = sections
         count = totalCount
-        size = .fixed(totalSize)
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
+        for synthesizedFunc in relocator.symbolTable.synthesizedFuncs() {
+            try synthesizedFunc.writeCode(writer: writer, relocator: relocator)
+        }
         for section in sections {
             let body = relocator.relocate(chunk: section)
             let payload = body[(section.payloadOffset! - section.offset)...]

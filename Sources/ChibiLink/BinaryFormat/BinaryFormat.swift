@@ -53,6 +53,7 @@ enum ConstOpcode: UInt8 {
 
 enum Opcode: UInt8 {
     case end = 0x0B
+    case call = 0x10
 }
 
 enum RelocType: UInt8, Equatable {
@@ -117,3 +118,5 @@ let SYMBOL_EXPLICIT_NAME: UInt32 = 0x40
 let SYMBOL_NO_STRIP: UInt32 = 0x80
 
 let PAGE_SIZE: Int = 65536
+
+let FUNC_TYPE_CODE: UInt8 = 0x60

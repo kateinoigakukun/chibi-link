@@ -72,13 +72,60 @@ protocol SymbolProtocol {
 final class FunctionSymbol: SymbolProtocol {
     typealias Defined = IndexableTarget
     typealias Import = FunctionImport
-    typealias Synthesized = Never
+    enum Synthesized: SynthesizedTarget {
+        case ctorsCaller(inits: [InitFunction])
+        var name: String {
+            switch self {
+            case .ctorsCaller: return "__wasm_call_ctors"
+            }
+        }
+        var context: String { return "_linker" }
+    }
 
     fileprivate(set) var target: Target
     let flags: SymbolFlags
     init(target: Target, flags: SymbolFlags) {
         self.target = target
         self.flags = flags
+    }
+}
+
+extension FunctionSymbol.Synthesized {
+    func writeCtorsCallerCode(writer: BinaryWriter, inits: [InitFunction], relocator: Relocator) throws {
+        let placeholder = try writer.writeSizePlaceholder()
+        let codeStart = writer.offset
+        try writer.writeULEB128(UInt32(0)) // num locals
+        for initFn in inits {
+            try writer.writeFixedUInt8(Opcode.call.rawValue)
+            guard case let .function(symbol) = initFn.binary.symbols[initFn.symbolIndex] else {
+                fatalError()
+            }
+            guard case let .defined(target) = symbol.target else {
+                fatalError()
+            }
+            let index = relocator.functionIndex(for: target)
+            try writer.writeULEB128(UInt32(index))
+            // TODO: Drop returned values to support non-void return ctors based on signatures
+        }
+        try writer.writeFixedUInt8(Opcode.end.rawValue)
+        let codeSize = writer.offset - codeStart
+        try writer.fillSizePlaceholder(placeholder, value: codeSize)
+    }
+    
+    func writeSignature(writer: BinaryWriter) throws {
+        try writer.writeFixedUInt8(FUNC_TYPE_CODE)
+        switch self {
+        case .ctorsCaller:
+            try writer.writeULEB128(UInt32(0)) // params
+            try writer.writeULEB128(UInt32(0)) // returns
+        }
+    }
+
+    func writeCode(writer: BinaryWriter, relocator: Relocator) throws {
+        switch self {
+        case let .ctorsCaller(inits):
+            try writeCtorsCallerCode(writer: writer, inits: inits, relocator: relocator)
+        }
     }
 }
 
@@ -188,7 +235,9 @@ enum Symbol {
 class SymbolTable {
     private var symbolMap: [String: Symbol] = [:]
     private var synthesizedGlobalIndexMap: [String: Index] = [:]
+    private var synthesizedFunctionIndexMap: [String: Index] = [:]
     private var _synthesizedGlobals: [GlobalSymbol.Synthesized] = []
+    private var _synthesizedFunctions: [FunctionSymbol.Synthesized] = []
 
     func symbols() -> [Symbol] {
         Array(symbolMap.values)
@@ -202,6 +251,14 @@ class SymbolTable {
         return _synthesizedGlobals
     }
 
+    func synthesizedFuncIndex(for target: FunctionSymbol.Synthesized) -> Index? {
+        synthesizedFunctionIndexMap[target.name]
+    }
+
+    func synthesizedFuncs() -> [FunctionSymbol.Synthesized] {
+        return _synthesizedFunctions
+    }
+
     func find(_ name: String) -> Symbol? {
         return symbolMap[name]
     }
@@ -209,9 +266,15 @@ class SymbolTable {
     func addFunctionSymbol(_ target: FunctionSymbol.Target,
                            flags: SymbolFlags) -> FunctionSymbol
     {
+        func indexSynthesizedFn() {
+            guard case let .synthesized(target) = target else { return }
+            synthesizedFunctionIndexMap[target.name] = _synthesizedFunctions.count
+            _synthesizedFunctions.append(target)
+        }
         guard let existing = symbolMap[target.name] else {
             let newSymbol = FunctionSymbol(target: target, flags: flags)
             symbolMap[target.name] = .function(newSymbol)
+            indexSynthesizedFn()
             return newSymbol
         }
         guard case let .function(existingFn) = existing else {
@@ -222,20 +285,25 @@ class SymbolTable {
         }
         // TODO: Handle flags
         switch (existingFn.target, target) {
-        case let (.undefined, .defined(newTarget)):
-            existingFn.target = .defined(newTarget)
+        case (.undefined, .defined), (.undefined, .synthesized):
+            existingFn.target = target
+            indexSynthesizedFn()
             return existingFn
-        case (.undefined, .undefined), (.defined, .undefined):
+        case (.undefined, .undefined), (.defined, .undefined),
+             (.synthesized, .undefined),
+             (.defined, .defined) where flags.isWeak,
+             (.synthesized, .synthesized) where flags.isWeak,
+             (.defined, .synthesized) where flags.isWeak,
+             (.synthesized, .defined) where flags.isWeak:
             return existingFn
-        case (.defined, .defined) where flags.isWeak:
-            return existingFn
-        case let (.defined(existing), .defined(newTarget)):
-            if flags.isWeak { return existingFn }
-            fatalError("""
-                Error: symbol conflict: \(existing.name)
-                >>> defined in \(newTarget.binary.filename)
-                >>> defined in \(existing.binary.filename)
-            """)
+        case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            reportSymbolConflict(
+                name: existing.name,
+                oldContext: existing.context, newContext: newTarget.context
+            )
         }
     }
 

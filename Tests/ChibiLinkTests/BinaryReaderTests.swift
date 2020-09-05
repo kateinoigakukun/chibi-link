@@ -30,6 +30,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onDataSymbol(_: Index, _: UInt32, _: String, _: (segmentIndex: Index, offset: Offset, size: Size)?) {}
 
     func onSegmentInfo(_: Index, _: String, _: Int, _: UInt32) {}
+    func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {}
 }
 
 func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {

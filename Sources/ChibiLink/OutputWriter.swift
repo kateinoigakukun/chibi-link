@@ -18,7 +18,12 @@ class OutputWriter {
         for sec in inputs.lazy.flatMap(\.sections) {
             sectionsMap[sec.sectionCode, default: []].append(sec)
         }
-        let typeSection = TypeSection(sections: sectionsMap[.type] ?? [])
+
+        synthesizeFunctionSymbols()
+
+        let typeSection = TypeSection(
+            sections: sectionsMap[.type] ?? [], symbolTable: symbolTable
+        )
         let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
 
         synthesizeDataSymbols(dataSection: dataSection)
@@ -27,7 +32,7 @@ class OutputWriter {
         let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = FunctionSection(
             sections: sectionsMap[.function] ?? [],
-            typeSection: typeSection, importSection: importSection
+            typeSection: typeSection, importSection: importSection, symbolTable: symbolTable
         )
         let globalSection = GlobalSection(
             sections: sectionsMap[.global] ?? [],
@@ -39,7 +44,7 @@ class OutputWriter {
             globalSection: globalSection
         )
         exportSection.addExport(ExportSection.Export(kind: .memory(0), name: "memory"))
-        let codeSection = CodeSection(sections: sectionsMap[.code] ?? [])
+        let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
         let tableSection = TableSection(inputs: inputs)
         let memorySection = MemorySection(dataSection: dataSection)
         let elemSection = ElementSection(
@@ -114,5 +119,14 @@ class OutputWriter {
             print("Log: \(name) is synthesized")
         }
         addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: 0)
+    }
+
+    func synthesizeFunctionSymbols() {
+        let initFunctions = inputs.flatMap(\.initFunctions).sorted(by: {
+            $0.priority < $1.priority
+        })
+        let target = FunctionSymbol.Synthesized.ctorsCaller(inits: initFunctions)
+        let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+        _ = symbolTable.addFunctionSymbol(.synthesized(target), flags: flags)
     }
 }
