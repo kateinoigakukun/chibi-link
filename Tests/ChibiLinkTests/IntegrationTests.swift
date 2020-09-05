@@ -8,6 +8,7 @@ class IntegrationTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
+            .appendingPathComponent("TokamakPad")
             .appendingPathComponent("Experiment")
         let inputs: [URL] = [
             experiment.appendingPathComponent("shared_lib.wasm"),
