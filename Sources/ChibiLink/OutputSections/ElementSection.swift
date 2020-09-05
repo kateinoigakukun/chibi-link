@@ -12,7 +12,7 @@ class ElementSection: VectorSection {
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
             indexOffsets[section.binary!.filename] = totalElemCount
-            totalElemCount += section.count!
+            totalElemCount += section.tableElementCount!
         }
         elementCount = totalElemCount
         self.sections = sections
@@ -34,12 +34,13 @@ class ElementSection: VectorSection {
             let payloadSize = section.payloadSize!
             let payloadEnd = payloadStart + payloadSize
             var readOffset = payloadStart
-            let funcIndexOffset = funcSection.indexOffset(for: section.binary!)!
-            for _ in 0 ..< section.count! {
+            let binary = section.binary!
+            let offsetBase = funcSection.indexOffset(for: binary)! - binary.funcImports.count
+            for _ in 0 ..< section.tableElementCount! {
                 let payload = section.binary!.data[readOffset ..< payloadEnd]
                 let (funcIndex, length) = decodeULEB128(payload, UInt32.self)
                 readOffset += length
-                try writer.writeIndex(Index(funcIndex) + funcIndexOffset)
+                try writer.writeIndex(Index(funcIndex) + offsetBase)
             }
         }
     }

@@ -31,6 +31,8 @@ class Section {
     var payloadSize: Size?
     let count: Int?
 
+    var tableElementCount: Int?
+
     var relocations: [Relocation] = []
 
     var dataSegments: [DataSegment] = []
@@ -192,11 +194,13 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.tableElemSize = limits.initial
     }
 
-    func onElementSegmentFunctionIndexCount(_: Index, _: Int) {
+    func onElementSegmentFunctionIndexCount(_ segmentIndex: Index, _ indexCount: Int) {
+        // FIXME: Do not assume that table is only one
         let sec = currentSection!
         let delta = state.offset - sec.payloadOffset!
         sec.payloadOffset! += delta
         sec.payloadSize! -= delta
+        sec.tableElementCount = indexCount
     }
 
     func onMemory(_: Index, _: Limits) {}
