@@ -29,8 +29,15 @@ class FunctionSection: VectorSection {
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
         // Synthesized functions and types are always on the head of sections
-        for i in 0..<relocator.symbolTable.synthesizedFuncs().count {
-            try writer.writeIndex(i)
+        var synthesizedSignatureCount = 0
+        for synthesized in relocator.symbolTable.synthesizedFuncs() {
+            if let (binary, index) = synthesized.reuseSignatureIndex {
+                let baseOffset = typeSection.indexOffset(for: binary)!
+                try writer.writeIndex(baseOffset + index)
+            } else {
+                try writer.writeIndex(synthesizedSignatureCount)
+                synthesizedSignatureCount += 1
+            }
         }
         // Read + Write + Relocate type indexes
         for section in sections {

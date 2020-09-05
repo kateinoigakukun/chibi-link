@@ -122,11 +122,23 @@ class OutputWriter {
     }
 
     func synthesizeFunctionSymbols() {
+        // Synthesize ctors caller
         let initFunctions = inputs.flatMap(\.initFunctions).sorted(by: {
             $0.priority < $1.priority
         })
         let target = FunctionSymbol.Synthesized.ctorsCaller(inits: initFunctions)
         let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
         _ = symbolTable.addFunctionSymbol(.synthesized(target), flags: flags)
+
+        // Synthesize weak undef func stubs
+        for sym in symbolTable.symbols() {
+            guard case let .function(sym) = sym,
+                  case let .undefined(target) = sym.target,
+                  sym.flags.isWeak else { continue }
+            let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+            let synthesized = FunctionSymbol.Synthesized.weakUndefStub(target)
+            _ = symbolTable.addFunctionSymbol(.synthesized(synthesized), flags: flags)
+            print("Log: weak undef stub for \(target.name) is synthesized")
+        }
     }
 }

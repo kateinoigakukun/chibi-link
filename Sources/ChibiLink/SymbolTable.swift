@@ -74,9 +74,12 @@ final class FunctionSymbol: SymbolProtocol {
     typealias Import = FunctionImport
     enum Synthesized: SynthesizedTarget {
         case ctorsCaller(inits: [InitFunction])
+        case weakUndefStub(FunctionImport)
         var name: String {
             switch self {
             case .ctorsCaller: return "__wasm_call_ctors"
+            case .weakUndefStub(let target):
+                return target.name
             }
         }
         var context: String { return "_linker" }
@@ -111,20 +114,38 @@ extension FunctionSymbol.Synthesized {
         let codeSize = writer.offset - codeStart
         try writer.fillSizePlaceholder(placeholder, value: codeSize)
     }
-    
+
     func writeSignature(writer: BinaryWriter) throws {
-        try writer.writeFixedUInt8(FUNC_TYPE_CODE)
         switch self {
         case .ctorsCaller:
+            try writer.writeFixedUInt8(FUNC_TYPE_CODE)
             try writer.writeULEB128(UInt32(0)) // params
             try writer.writeULEB128(UInt32(0)) // returns
+        case .weakUndefStub:
+            // reuse signature
+            break
         }
     }
-
+    
+    var reuseSignatureIndex: (InputBinary, Index)? {
+        switch self {
+        case .ctorsCaller: return nil
+        case .weakUndefStub(let target):
+            return (target.selfBinary!, target.signatureIdx)
+        }
+    }
     func writeCode(writer: BinaryWriter, relocator: Relocator) throws {
         switch self {
         case let .ctorsCaller(inits):
             try writeCtorsCallerCode(writer: writer, inits: inits, relocator: relocator)
+        case .weakUndefStub:
+            let unreachableFn: [UInt8] = [
+                0x03, // ULEB:   length
+                0x00, // ULEB:   num locals
+                0x00, // Opcode: unreachable
+                0x0b, // Opcode: end
+            ]
+            try writer.writeBytes(unreachableFn[...])
         }
     }
 }

@@ -12,7 +12,9 @@ class TypeSection: VectorSection {
     }
 
     init(sections: [Section], symbolTable: SymbolTable) {
-        var totalCount: Int = symbolTable.synthesizedFuncs().count
+        var totalCount: Int = symbolTable.synthesizedFuncs().filter {
+            $0.reuseSignatureIndex == nil
+        }.count
         var indexOffsets: [String: Offset] = [:]
         for section in sections {
             assert(section.sectionCode == .type)
