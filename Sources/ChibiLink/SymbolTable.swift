@@ -242,15 +242,15 @@ class SymbolTable {
                          flags: SymbolFlags) -> GlobalSymbol
     {
         
-        defer {
-            if case let .synthesized(target) = target {
-                synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
-                _synthesizedGlobals.append(target)
-            }
+        func indexSynthesizedGlobal() {
+            guard case let .synthesized(target) = target else { return }
+            synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
+            _synthesizedGlobals.append(target)
         }
         guard let existing = symbolMap[target.name] else {
             let newSymbol = GlobalSymbol(target: target, flags: flags)
             symbolMap[target.name] = .global(newSymbol)
+            indexSynthesizedGlobal()
             return newSymbol
         }
 
@@ -263,6 +263,7 @@ class SymbolTable {
         switch (existingGlobal.target, target) {
         case (.undefined, .defined), (.undefined, .synthesized):
             existingGlobal.target = target
+            indexSynthesizedGlobal()
             return existingGlobal
         case (.undefined, .undefined), (.defined, .undefined),
              (.synthesized, .undefined),
