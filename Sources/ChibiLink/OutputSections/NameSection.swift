@@ -18,7 +18,7 @@ class NameSection: CustomSection {
         try writer.writeULEB128(UInt32(count))
         for binary in inputs {
             let base = funcSection.indexOffset(for: binary)!
-            for (index, name) in binary.debugNames.enumerated() {
+            for (index, name) in binary.debugNames.dropFirst(binary.funcImports.count).enumerated() {
                 try writer.writeIndex(base + index)
                 try writer.writeString(name)
             }
