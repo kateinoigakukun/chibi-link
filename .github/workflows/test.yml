@@ -7,6 +7,8 @@ jobs:
     name: Build and run tests
     steps:
     - uses: actions/checkout@master
+    - name: Install tools
+      run: brew install llvm wasmtime wabt
     - name: Download Toolchain
       run: |
         VERSION=swift-wasm-5.3-SNAPSHOT-2020-08-10-a

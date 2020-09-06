@@ -12,7 +12,7 @@ cd $workdir
 # Extract object files from libswiftSwiftOnoneSupport.a to force link
 mkdir -p $workdir/swiftSwiftOnoneSupport
 pushd $workdir/swiftSwiftOnoneSupport > /dev/null
-$LLVM_AR x $SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftSwiftOnoneSupport.a
+llvm-ar x $SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftSwiftOnoneSupport.a
 popd > /dev/null
 
 # Link shared library
