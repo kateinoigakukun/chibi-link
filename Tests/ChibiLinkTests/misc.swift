@@ -3,8 +3,8 @@ import Foundation
 
 func exec(_ launchPath: String, _ arguments: [String]) {
     let process = Process()
-    process.launchPath = "/usr/bin/env"
-    process.arguments = [launchPath] + arguments
+    process.launchPath = launchPath
+    process.arguments = arguments
     process.launch()
     process.waitUntilExit()
     assert(process.terminationStatus == 0)
@@ -54,14 +54,14 @@ enum Input {
 func compileWat(_ content: String, options: [String] = []) -> URL {
     let module = createFile(content)
     let (output, _) = makeTemporaryFile()
-    exec("wat2wasm", [module.path, "-o", output.path] + options)
+    exec("/usr/local/bin/wat2wasm", [module.path, "-o", output.path] + options)
     return output
 }
 
 func compileLLVMIR(_ content: String, options: [String] = []) -> URL {
     let module = createFile(content)
     let (output, _) = makeTemporaryFile()
-    exec("llc", [module.path, "-filetype=obj", "-o", output.path] + options)
+    exec("/usr/local/opt/llvm/bin/llc", [module.path, "-filetype=obj", "-o", output.path] + options)
     return output
 }
 
@@ -75,7 +75,7 @@ func compile(_ input: Input) -> URL {
 }
 
 func runWasm(_ input: URL) {
-    exec("wasmtime", [input.path])
+    exec("/usr/local/bin/wasmtime", [input.path])
 }
 
 func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
