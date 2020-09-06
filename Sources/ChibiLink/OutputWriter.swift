@@ -43,7 +43,6 @@ class OutputWriter {
             funcSection: funcSection,
             globalSection: globalSection
         )
-        exportSection.addExport(ExportSection.Export(kind: .memory(0), name: "memory"))
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
         let tableSection = TableSection(inputs: inputs)
         let memorySection = MemorySection(dataSection: dataSection)
@@ -51,9 +50,11 @@ class OutputWriter {
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
         )
 
+        /*
         let startSection = StartSection(
             symbolTable: symbolTable, funcSection: funcSection
         )
+        */
 
         #if DEBUG
             let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
@@ -77,9 +78,11 @@ class OutputWriter {
         try writeSection(memorySection)
         try writeSection(globalSection)
         try writeSection(exportSection)
+        /*
         if let startSection = startSection {
             try writeSection(startSection)
         }
+        */
         try writeSection(elemSection)
         try writeSection(codeSection)
         try writeSection(dataSection)

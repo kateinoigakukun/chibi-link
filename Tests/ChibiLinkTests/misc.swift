@@ -74,6 +74,10 @@ func compile(_ input: Input) -> URL {
     }
 }
 
+func runWasm(_ input: URL) {
+    exec("/usr/local/bin/wasmtime", [input.path])
+}
+
 func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
     let bytes = try! Array(Data(contentsOf: url))
     let filename = filename ?? url.lastPathComponent
