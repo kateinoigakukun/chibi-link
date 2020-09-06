@@ -174,6 +174,7 @@ final class DataSymbol: SymbolProtocol {
     struct DefinedSegment: DefinedTarget {
         let name: String
         let segment: DataSegment
+        let offset: Offset
         let context: String
         let binary: InputBinary
     }

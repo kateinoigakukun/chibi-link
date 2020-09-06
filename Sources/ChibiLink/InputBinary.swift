@@ -3,6 +3,7 @@ class DataSegment {
     var offset: Offset!
     var size: Size!
     var info: Info!
+    var data: ArraySlice<UInt8>!
 
     struct Info {
         let name: String
@@ -51,6 +52,12 @@ class Section {
         self.count = count
         self.binary = binary
     }
+
+    #if DEBUG
+    func data() -> [UInt8] {
+        Array(binary!.data[offset..<offset + size])
+    }
+    #endif
 }
 
 class FunctionImport {
@@ -230,10 +237,11 @@ class LinkInfoCollector: BinaryReaderDelegate {
         segment.offset = Int(value)
     }
 
-    func onDataSegmentData(_: Index, _: ArraySlice<UInt8>, _ size: Size) {
+    func onDataSegmentData(_: Index, _ data: ArraySlice<UInt8>, _ size: Size) {
         let sec = currentSection!
         let segment = sec.dataSegments.last!
         segment.size = size
+        segment.data = data
     }
 
     func beginNamesSection(_: Size) {
@@ -299,6 +307,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
                 DataSymbol.DefinedSegment(
                     name: name,
                     segment: segment,
+                    offset: content.offset,
                     context: binary.filename,
                     binary: binary
                 )

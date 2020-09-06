@@ -95,7 +95,7 @@ class Relocator {
             switch dataSym.target {
             case let .defined(target):
                 let startVA = dataSection.startVirtualAddress(for: target.segment, binary: target.binary)!
-                return UInt64(startVA + Int(relocation.addend))
+                return UInt64(startVA + target.offset + Int(relocation.addend))
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:

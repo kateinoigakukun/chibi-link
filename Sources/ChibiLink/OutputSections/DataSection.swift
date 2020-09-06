@@ -94,12 +94,17 @@ class DataSection: VectorSection {
         var memoryOffset: Offset = 0
         var outputOffsetByInputSegName: [OffsetKey: Offset] = [:]
         for segment in segmentList {
-            for chunk in segment.chunks {
-                let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
-                outputOffsetByInputSegName[key] = memoryOffset + chunk.offset
-            }
             memoryOffset = align(memoryOffset, to: segment.alignment)
             segments.append((segment, memoryOffset))
+
+            for chunk in segment.chunks {
+                if chunk.segment.info.name == ".rodata..L.str" {
+                    print("Debug: Hit Breakpoint")
+                }
+                let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
+                assert(outputOffsetByInputSegName[key] == nil)
+                outputOffsetByInputSegName[key] = memoryOffset + chunk.offset
+            }
             memoryOffset += segment.size
         }
         self.segments = segments
@@ -112,9 +117,10 @@ class DataSection: VectorSection {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                let body = relocator.relocate(chunk: chunk)
-                let offset = chunk.segment.offset!
-                return Array(body[offset ..< offset + chunk.segment.size])
+                let section = relocator.relocate(chunk: chunk)
+                // FIXME
+                let offset = chunk.segment.data.startIndex - chunk.section.offset
+                return Array(section[offset ..< offset + chunk.segment.size])
             }
         }
     }
