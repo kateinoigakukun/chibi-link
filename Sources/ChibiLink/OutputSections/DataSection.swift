@@ -56,7 +56,6 @@ class DataSection: VectorSection {
 
     init(sections: [Section]) {
         var segmentMap: [String: OutputSegment] = [:]
-        var inputsByOutput: [String: [String]] = [:]
         for section in sections {
             var relocs = section.relocations.sorted(by: {
                 $0.offset > $1.offset
@@ -64,7 +63,6 @@ class DataSection: VectorSection {
             let segments = section.dataSegments.sorted(by: {
                 $0.offset < $1.offset
             })
-            let vectorHeaderSize = section.payloadOffset! - section.offset
             for segment in segments {
                 let info = segment.info!
                 let inputName = info.name
@@ -76,17 +74,22 @@ class DataSection: VectorSection {
                     outSegment = OutputSegment(name: outputName)
                     segmentMap[outputName] = outSegment
                 }
-//                inputsByOutput[outputName, default: []].append(inputName)
 
                 var segmentRelocs: [Relocation] = []
+                let rangeStart = segment.data.startIndex - section.offset
+                let rangeEnd = segment.data.endIndex - section.offset
                 while let headReloc = relocs.last,
-                    headReloc.offset <= (vectorHeaderSize + segment.offset + segment.size)
+                      (rangeStart..<rangeEnd).contains(headReloc.offset)
                 {
+                    if headReloc.offset == 0x1b49df {
+                        print("Debug: Add relocation for $ss23_ContiguousArrayStorageCyypGMD")
+                    }
                     relocs.removeLast()
                     segmentRelocs.append(headReloc)
                 }
                 outSegment.addInput(segment, relocs: segmentRelocs, section: section)
             }
+            assert(relocs.isEmpty)
         }
         count = segmentMap.count
         let segmentList = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
@@ -98,9 +101,6 @@ class DataSection: VectorSection {
             segments.append((segment, memoryOffset))
 
             for chunk in segment.chunks {
-                if chunk.segment.info.name == ".rodata..L.str" {
-                    print("Debug: Hit Breakpoint")
-                }
                 let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
                 assert(outputOffsetByInputSegName[key] == nil)
                 outputOffsetByInputSegName[key] = memoryOffset + chunk.offset

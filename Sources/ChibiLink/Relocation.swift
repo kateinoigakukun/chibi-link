@@ -163,10 +163,7 @@ class Relocator {
         case .LE64Bit:
             currentValue = Int(decodeLittleEndian(bytes[location...], UInt64.self))
         }
-        let thePoint = 0x40e8cc
-        if thePoint == location {
-            print("Debug: Hit breakpoint")
-        }
+
         let value = translate(relocation: relocation, binary: binary, current: currentValue)
         func writeBytes(_ result: [UInt8]) {
             for (offset, byte) in result.enumerated() {
