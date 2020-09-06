@@ -1,7 +1,11 @@
 #if canImport(Darwin)
     import Darwin
+    typealias FilePointer = UnsafeMutablePointer<FILE>
 #elseif canImport(Glibc)
     import Glibc
+
+    let SEEK_SET: Int32 = 0
+    typealias FilePointer = OpaquePointer
 #endif
 
 protocol OutputByteStream {
@@ -24,13 +28,16 @@ extension OutputByteStream {
 }
 
 class FileOutputByteStream: OutputByteStream {
-    private let filePointer: UnsafeMutablePointer<FILE>
+    private let filePointer: FilePointer
     private(set) var currentOffset: Offset = 0
-    convenience init(path: String) {
-        self.init(filePointer: fopen(path, "wb"))
+    convenience init(path: String) throws {
+        guard let fp = fopen(path, "wb") else {
+            throw FileSystemError(errno: errno)
+        }
+        self.init(filePointer: fp)
     }
 
-    init(filePointer: UnsafeMutablePointer<FILE>) {
+    init(filePointer: FilePointer) {
         self.filePointer = filePointer
     }
 
@@ -49,9 +56,9 @@ class FileOutputByteStream: OutputByteStream {
             let n = fwrite(ptr, 1, length, filePointer)
             if n < 0 {
                 if errno == EINTR { continue }
-                throw FileSystemError.ioError(errno)
+                throw FileSystemError.ioError
             } else if n != length {
-                throw FileSystemError.ioError(errno)
+                throw FileSystemError.ioError
             }
             break
         }

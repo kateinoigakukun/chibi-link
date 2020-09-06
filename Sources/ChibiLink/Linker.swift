@@ -9,7 +9,7 @@ public func performLinker(_ filenames: [String], output: String, exports: [Strin
         try reader.readModule()
         inputs.append(binary)
     }
-    let stream = FileOutputByteStream(path: output)
+    let stream = try FileOutputByteStream(path: output)
     let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs, exportSymbols: exports)
     try writer.writeBinary()
 }

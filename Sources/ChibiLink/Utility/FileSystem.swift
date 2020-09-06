@@ -2,14 +2,43 @@
     import Darwin
 #elseif canImport(Glibc)
     import Glibc
+    let ENOENT: Int32 = 2
+    let EACCES: Int32 = 13
+    let ENOTDIR: Int32 = 20
+    let EISDIR: Int32 = 21
 #endif
 
 enum FileSystemError: Error {
-    case ioError(Int32)
+    case invalidAccess
+    case ioError
+    case isDirectory
+    case noEntry
+    case notDirectory
+    case unsupported
+    case unknownOSError(Int32)
+}
+
+extension FileSystemError {
+    init(errno: Int32) {
+        switch errno {
+        case EACCES:
+            self = .invalidAccess
+        case EISDIR:
+            self = .isDirectory
+        case ENOENT:
+            self = .noEntry
+        case ENOTDIR:
+            self = .notDirectory
+        default:
+            self = .unknownOSError(errno)
+        }
+    }
 }
 
 func readFileContents(_ filename: String) throws -> [UInt8] {
+    print("Info: Reading \(filename)")
     let fd = fopen(filename, "rb")
+    guard fd != nil else { throw FileSystemError(errno: errno) }
     defer { fclose(fd) }
     var bytes: [UInt8] = []
     var tmpBuffer = [UInt8](repeating: 0, count: 1 << 12)
@@ -17,11 +46,11 @@ func readFileContents(_ filename: String) throws -> [UInt8] {
         let n = fread(&tmpBuffer, 1, tmpBuffer.count, fd)
         if n < 0 {
             if errno == EINTR { continue }
-            throw FileSystemError.ioError(errno)
+            throw FileSystemError.ioError
         }
         if n == 0 {
             if ferror(fd) != 0 {
-                throw FileSystemError.ioError(errno)
+                throw FileSystemError.ioError
             }
             break
         }

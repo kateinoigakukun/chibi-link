@@ -1,5 +1,4 @@
 import ChibiLink
-import Foundation
 
 var args = CommandLine.arguments
 var index = args.startIndex + 1
@@ -19,4 +18,8 @@ while index < args.count {
 guard let output = output else {
     fatalError("no output file specified")
 }
-try performLinker(inputs, output: output)
+do {
+    try performLinker(inputs, output: output)
+} catch {
+    fatalError("\(dump(error))")
+}
