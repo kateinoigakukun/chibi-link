@@ -48,10 +48,10 @@ struct ImportSeciton: VectorSection {
             imports.append(newImport)
         }
         #if DEBUG
-            print("Debug: Print all undefined symbols")
+            debug("Print all undefined symbols")
             for symbol in symbolTable.symbols() {
                 guard symbol.isUndefined else { continue }
-                print(symbol.name)
+                debug(symbol.name)
             }
         #endif
         for symbol in symbolTable.symbols() {

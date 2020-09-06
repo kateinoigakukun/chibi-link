@@ -82,9 +82,6 @@ class DataSection: VectorSection {
                 while let headReloc = relocs.last,
                       (rangeStart..<rangeEnd).contains(headReloc.offset)
                 {
-                    if headReloc.offset == 0x1b49df {
-                        print("Debug: Add relocation for $ss23_ContiguousArrayStorageCyypGMD")
-                    }
                     relocs.removeLast()
                     segmentRelocs.append(headReloc)
                 }

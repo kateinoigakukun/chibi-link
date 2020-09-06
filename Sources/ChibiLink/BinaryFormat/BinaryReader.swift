@@ -230,8 +230,11 @@ class BinaryReader {
                 try readElementSection(sectionSize: size)
             case .data:
                 try readDataSection(sectionSize: size)
+            case .type, .dataCount, .code:
+                // Don't parse contents
+                break
             default:
-                print("Warning: Section '\(section)' is currently not supported")
+                warning("Section '\(section)' is currently not supported")
             }
 
             state.offset = sectionEnd
@@ -368,7 +371,7 @@ class BinaryReader {
             && !sectionName.hasPrefix("reloc..debug_"):
             try readRelocSection(sectionSize: sectionSize)
         default:
-            print("Warning: Custom section '\(sectionName)' is currently not supported")
+            warning("Custom section '\(sectionName)' is currently not supported")
         }
     }
 
@@ -440,9 +443,9 @@ class BinaryReader {
                 readInitFunctions()
             default:
                 if let linkingType = linkingType {
-                    print("Warning: Linking subsection '\(String(describing: linkingType))' is not supported now")
+                    warning("Linking subsection '\(String(describing: linkingType))' is not supported now")
                 } else {
-                    print("Warning: Linking subsection unknown code '\(linkingTypeCode)' is not supported now")
+                    warning("Linking subsection unknown code '\(linkingTypeCode)' is not supported now")
                 }
                 state.offset = subSectionEnd
             }

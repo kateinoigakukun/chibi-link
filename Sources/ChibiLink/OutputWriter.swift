@@ -98,7 +98,7 @@ class OutputWriter {
         )
         let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
         _ = symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
-        print("Log: \(name) is synthesized")
+        debug("\(name) is synthesized")
     }
 
     func synthesizeDataSymbols(dataSection: DataSection) {
@@ -106,7 +106,7 @@ class OutputWriter {
             let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
             _ = symbolTable.addDataSymbol(.synthesized(target), flags: flags)
-            print("Log: \(name) is synthesized")
+            debug("\(name) is synthesized")
         }
 
         for (segment, address) in dataSection.segments {
@@ -140,7 +140,7 @@ class OutputWriter {
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
             let synthesized = FunctionSymbol.Synthesized.weakUndefStub(target)
             _ = symbolTable.addFunctionSymbol(.synthesized(synthesized), flags: flags)
-            print("Log: weak undef stub for \(target.name) is synthesized")
+            debug("weak undef stub for \(target.name) is synthesized")
         }
     }
 }
