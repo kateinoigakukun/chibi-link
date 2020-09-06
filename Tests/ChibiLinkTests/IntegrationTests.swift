@@ -3,18 +3,17 @@ import XCTest
 
 class IntegrationTests: XCTestCase {
     func testLinkSwiftStdlib() throws {
-        let experiment = URL(fileURLWithPath: #file)
+        let outputs = URL(fileURLWithPath: #file)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("TokamakPad")
-            .appendingPathComponent("Experiment")
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent("output")
         let inputs: [URL] = [
-            experiment.appendingPathComponent("shared_lib.wasm"),
-            experiment.appendingPathComponent("main.o"),
+            outputs.appendingPathComponent("shared_lib.wasm"),
+            outputs.appendingPathComponent("main.o"),
         ]
-        let output = experiment.appendingPathComponent("linked.wasm")
+        let output = outputs.appendingPathComponent("linked.wasm")
         try performLinker(inputs.map(\.path), output: output.path)
         runWasm(output)
     }
