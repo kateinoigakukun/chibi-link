@@ -12,7 +12,10 @@ jobs:
     - name: Install tools
       run: |
         brew install llvm wabt
-        curl https://wasmtime.dev/install.sh -sSf | bash
+        cd $(mktemp -d)
+        wget https://github.com/cranestation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-macos.tar.xz
+        tar xfz wasmtime-dev-x86_64-macos.tar.xz
+        sudo cp wasmtime-dev-x86_64-macos/wasmtime /usr/local/bin/wasmtime
     - name: Download Toolchain
       run: |
         VERSION=swift-wasm-5.3-SNAPSHOT-2020-08-10-a
