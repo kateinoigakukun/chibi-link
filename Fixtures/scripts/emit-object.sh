@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source scripts/config.sh
+scripts="$(cd "$(dirname $0)" && pwd)"
+source $scripts/config.sh
 
 source=$1
 output=$2
