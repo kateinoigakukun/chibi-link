@@ -2,13 +2,16 @@ class OutputWriter {
     let writer: BinaryWriter
     let symbolTable: SymbolTable
     let inputs: [InputBinary]
+    let exportSymbols: [String]
     init(stream: OutputByteStream,
          symbolTable: SymbolTable,
-         inputs: [InputBinary])
+         inputs: [InputBinary],
+         exportSymbols: [String] = [])
     {
         writer = BinaryWriter(stream: stream)
         self.symbolTable = symbolTable
         self.inputs = inputs
+        self.exportSymbols = exportSymbols
     }
 
     func writeBinary() throws {
@@ -40,6 +43,7 @@ class OutputWriter {
         )
         let exportSection = ExportSection(
             symbolTable: symbolTable,
+            exportSymbols: exportSymbols,
             funcSection: funcSection,
             globalSection: globalSection
         )
