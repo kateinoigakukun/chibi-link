@@ -26,7 +26,8 @@ class ElementSection: VectorSection {
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
         try writer.writeULEB128(UInt32(0)) // table index
-        try writer.writeI32InitExpr(.i32(0)) // offset
+        // For non-PIC, we start at 1 so that accessing table index 0 always traps.
+        try writer.writeI32InitExpr(.i32(1)) // offset
         try writer.writeULEB128(UInt32(elementCount))
         // Read + Write + Relocate func indexes
         for section in sections {
