@@ -1,0 +1,24 @@
+name: Build and run tests
+on:
+  push: {}
+jobs:
+  run:
+    runs-on: macOS-latest
+    name: Build and run tests
+    steps:
+    - uses: actions/checkout@master
+    - name: Download Toolchain
+      run: |
+        VERSION=swift-wasm-5.3-SNAPSHOT-2020-08-10-a
+        TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-osx.tar.gz"
+        wget $TOOLCHAIN_URL
+        tar xfz $VERSION-osx.tar.gz
+        echo "::set-env name=SWIFT_TOOLCHAIN::$PWD/$VERSION"
+    - name: Build Fixtures
+      run: |
+        cd Fixtures
+        make all
+    - name: Build
+      run: swift build
+    - name: Test
+      run: swift test
