@@ -1,10 +1,16 @@
 protocol RelocatableChunk {
+    var sectionStart: Offset { get }
     var relocations: [Relocation] { get }
     var parentBinary: InputBinary { get }
     var relocationRange: Range<Index> { get }
 }
 
 extension Section: RelocatableChunk {
+    var sectionStart: Offset { offset }
+
+    var chunkBytes: ArraySlice<UInt8> {
+        binary!.data[offset ..< offset + size]
+    }
     var parentBinary: InputBinary {
         binary!
     }
@@ -38,9 +44,10 @@ class Relocator {
     }
 
     func relocate<T>(chunk: T) -> [UInt8] where T: RelocatableChunk {
+        let relocOffset = chunk.relocationRange.startIndex - chunk.sectionStart
         var body = Array(chunk.parentBinary.data[chunk.relocationRange])
         for reloc in chunk.relocations {
-            apply(relocation: reloc, binary: chunk.parentBinary, bytes: &body)
+            apply(relocation: reloc, relocOffset: relocOffset, binary: chunk.parentBinary, bytes: &body)
         }
         return body
     }
@@ -146,8 +153,8 @@ class Relocator {
         fatalError()
     }
 
-    func apply(relocation: Relocation, binary: InputBinary, bytes: inout [UInt8]) {
-        let location = bytes.startIndex + relocation.offset
+    func apply(relocation: Relocation, relocOffset: Offset, binary: InputBinary, bytes: inout [UInt8]) {
+        let location = bytes.startIndex - relocOffset + relocation.offset
         let currentValue: Int
         switch relocation.type.outputType {
         case .ULEB128_32Bit:

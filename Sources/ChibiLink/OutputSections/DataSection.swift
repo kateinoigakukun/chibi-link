@@ -23,12 +23,13 @@ class OutputSegment {
 }
 
 extension OutputSegment.Chunk: RelocatableChunk {
+    var sectionStart: Offset { section.sectionStart }
     var relocations: [Relocation] { relocs }
 
     var parentBinary: InputBinary { section.parentBinary }
 
     var relocationRange: Range<Index> {
-        section.relocationRange
+        return segment.data.indices
     }
 }
 
@@ -117,10 +118,11 @@ class DataSection: VectorSection {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                let section = relocator.relocate(chunk: chunk)
+                let segment = relocator.relocate(chunk: chunk)
+                return segment
                 // FIXME
-                let offset = chunk.segment.data.startIndex - chunk.section.offset
-                return Array(section[offset ..< offset + chunk.segment.size])
+//                let offset = chunk.segment.data.startIndex - chunk.section.offset
+//                return Array(section[offset ..< offset + chunk.segment.size])
             }
         }
     }
