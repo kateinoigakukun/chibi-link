@@ -1,16 +1,22 @@
 import ChibiLink
 import Foundation
 
-let experiment = URL(fileURLWithPath: #file)
-    .deletingLastPathComponent()
-    .deletingLastPathComponent()
-    .deletingLastPathComponent()
-    .deletingLastPathComponent()
-    .appendingPathComponent("TokamakPad")
-    .appendingPathComponent("Experiment")
-let inputs: [URL] = [
-    experiment.appendingPathComponent("shared_lib.wasm"),
-    experiment.appendingPathComponent("main.o"),
-]
-let output = experiment.appendingPathComponent("linked.wasm")
-try performLinker(inputs.map(\.path), output: output.path)
+var args = CommandLine.arguments
+var index = args.startIndex + 1
+var output: String?
+var inputs: [String] = []
+while index < args.count {
+    switch args[index] {
+    case "-o":
+        index += 1
+        output = args[index]
+    default:
+        inputs.append(args[index])
+    }
+    index += 1
+}
+
+guard let output = output else {
+    fatalError("no output file specified")
+}
+try performLinker(inputs, output: output)
