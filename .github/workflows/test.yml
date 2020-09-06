@@ -7,6 +7,8 @@ jobs:
     name: Build and run tests
     steps:
     - uses: actions/checkout@master
+    - name: Select latest Xcode
+      run: sudo xcode-select --switch /Applications/Xcode_12_beta.app/Contents/Developer/
     - name: Install tools
       run: |
         brew install llvm wabt
