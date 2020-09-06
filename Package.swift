@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .executable(name: "strip-debug", targets: ["strip-debug"]),
         .executable(name: "chibi-link", targets: ["chibi-link"]),
+        .library(name: "ChibiLink", targets: ["ChibiLink"]),
     ],
     dependencies: [],
     targets: [
