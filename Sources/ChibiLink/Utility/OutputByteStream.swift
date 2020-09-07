@@ -8,9 +8,9 @@
     typealias FilePointer = OpaquePointer
 #endif
 
-protocol OutputByteStream {
+public protocol OutputByteStream {
     /// The head offset that the stream is writing at.
-    var currentOffset: Offset { get }
+    var currentOffset: Int { get }
     /// Write `bytes` at `currentOffset` and move the current offset
     func write(_ bytes: ArraySlice<UInt8>) throws
     /// Write `bytes` at `currentOffset` and move the current offset
@@ -18,11 +18,11 @@ protocol OutputByteStream {
     /// Write `value` as UTF-8 bytes at `currentOffset` and move the current offset
     func writeString(_ value: String) throws
     /// Write `bytes` at `offset`. Doesn't move current offset
-    func write(_ bytes: [UInt8], at offset: Offset) throws
+    func write(_ bytes: [UInt8], at offset: Int) throws
 }
 
 extension OutputByteStream {
-    func write(_ bytes: [UInt8]) throws {
+    public func write(_ bytes: [UInt8]) throws {
         try write(bytes[...])
     }
 }
