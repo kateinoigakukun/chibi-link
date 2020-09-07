@@ -6,10 +6,8 @@ class TableSection: VectorSection {
 
     let elementCount: Int
 
-    init(inputs: [InputBinary]) {
-        elementCount = inputs.reduce(0) {
-            $0 + $1.tableElemSize
-        }
+    init(elementSection: ElementSection) {
+        elementCount = elementSection.elementCount
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {

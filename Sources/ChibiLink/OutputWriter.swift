@@ -48,12 +48,11 @@ class OutputWriter {
             globalSection: globalSection
         )
         let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
-        let tableSection = TableSection(inputs: inputs)
         let memorySection = MemorySection(dataSection: dataSection)
         let elemSection = ElementSection(
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
         )
-
+        let tableSection = TableSection(elementSection: elemSection)
         /*
         let startSection = StartSection(
             symbolTable: symbolTable, funcSection: funcSection
