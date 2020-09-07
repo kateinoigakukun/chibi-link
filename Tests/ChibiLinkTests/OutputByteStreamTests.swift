@@ -5,7 +5,7 @@ class OutputByteStreamTests: XCTestCase {
     func testWriteAt() throws {
         let (file, _) = makeTemporaryFile()
         do {
-            let stream = FileOutputByteStream(path: file.path)
+            let stream = try FileOutputByteStream(path: file.path)
             try stream.write([0, 0])
             try stream.write([0, 0, 0])
             try stream.write([1, 2, 3], at: 2)

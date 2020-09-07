@@ -26,11 +26,11 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputS
     )
     let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
     let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
-    let tableSection = TableSection(inputs: inputs)
     let memorySection = MemorySection(dataSection: dataSection)
     let elemSection = ElementSection(
         sections: sectionsMap[.elem] ?? [], funcSection: funcSection
     )
+    let tableSection = TableSection(elementSection: elemSection)
     return [
         .type: typeSection,
         .import: importSection,

@@ -14,7 +14,8 @@ class IntegrationTests: XCTestCase {
             outputs.appendingPathComponent("main.o"),
         ]
         let output = outputs.appendingPathComponent("linked.wasm")
-        try performLinker(inputs.map(\.path), output: output.path)
+        let outputStream = try FileOutputByteStream(path: output.path)
+        try performLinker(inputs.map(\.path), outputStream: outputStream)
         runWasm(output)
     }
 }
