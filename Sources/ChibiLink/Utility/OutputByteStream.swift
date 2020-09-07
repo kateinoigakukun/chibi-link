@@ -27,10 +27,10 @@ extension OutputByteStream {
     }
 }
 
-class FileOutputByteStream: OutputByteStream {
+public class FileOutputByteStream: OutputByteStream {
     private let filePointer: FilePointer
-    private(set) var currentOffset: Offset = 0
-    convenience init(path: String) throws {
+    public private(set) var currentOffset: Int = 0
+    public convenience init(path: String) throws {
         guard let fp = fopen(path, "wb") else {
             throw FileSystemError(errno: errno)
         }
@@ -43,7 +43,7 @@ class FileOutputByteStream: OutputByteStream {
 
     deinit { fclose(filePointer) }
 
-    func write(_ bytes: [UInt8], at offset: Offset) throws {
+    public func write(_ bytes: [UInt8], at offset: Int) throws {
         let original = currentOffset
         fseek(filePointer, offset, SEEK_SET)
         try write(bytes)
@@ -65,13 +65,13 @@ class FileOutputByteStream: OutputByteStream {
         currentOffset += length
     }
 
-    func write(_ bytes: ArraySlice<UInt8>) throws {
+    public func write(_ bytes: ArraySlice<UInt8>) throws {
         try bytes.withUnsafeBytes { bytesPtr in
             try _write(bytesPtr.baseAddress!, length: bytesPtr.count)
         }
     }
 
-    func writeString(_ value: String) throws {
+    public func writeString(_ value: String) throws {
         var value = value
         try value.withUTF8 { bufferPtr in
             try _write(bufferPtr.baseAddress!, length: bufferPtr.count)

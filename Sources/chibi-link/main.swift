@@ -19,7 +19,8 @@ guard let output = output else {
     fatalError("no output file specified")
 }
 do {
-    try performLinker(inputs, output: output)
+    let outputStream = try FileOutputByteStream(path: output)
+    try performLinker(inputs, outputStream: outputStream)
 } catch {
     fatalError("\(dump(error))")
 }
