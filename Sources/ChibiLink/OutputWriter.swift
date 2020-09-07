@@ -72,7 +72,9 @@ class OutputWriter {
         )
 
         func writeSection<S: OutputSection>(_ section: S) throws {
+            debug("Writing \(section.section)")
             try section.write(writer: writer, relocator: relocator)
+            debug("Finish writing \(section.section)")
         }
 
         try writeSection(typeSection)
