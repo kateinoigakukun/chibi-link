@@ -2,6 +2,12 @@
 
 A toy linker for WebAssembly object files.
 
+Features
+
+- Support linking object files produced by LLVM
+- Pure Swift
+- No Foundation dependency
+
 ## How to use
 
 ### Link
