@@ -5,18 +5,51 @@ protocol RelocatableChunk {
     var relocationRange: Range<Index> { get }
 }
 
-extension Section: RelocatableChunk {
+extension GenericInputSection: RelocatableChunk {
     var sectionStart: Offset { offset }
+    var parentBinary: InputBinary { binary }
+    var relocationRange: Range<Index> {
+        offset ..< offset + size
+    }
+}
+
+extension InputSection: RelocatableChunk {
+    var relocations: [Relocation] {
+        switch self {
+        case .data(let sec): return sec.relocations
+        case .element(let sec): return sec.relocations
+        case .raw(_, let sec): return sec.relocations
+        case .rawVector(_, let sec): return sec.relocations
+        }
+    }
+    
+    var sectionStart: Offset {
+        switch self {
+        case .data(let sec): return sec.offset
+        case .element(let sec): return sec.offset
+        case .raw(_, let sec): return sec.offset
+        case .rawVector(_, let sec): return sec.offset
+        }
+    }
+    
+    var size: Size {
+        switch self {
+        case .data(let sec): return sec.size
+        case .element(let sec): return sec.size
+        case .raw(_, let sec): return sec.size
+        case .rawVector(_, let sec): return sec.size
+        }
+    }
 
     var chunkBytes: ArraySlice<UInt8> {
-        binary!.data[offset ..< offset + size]
+        binary.data[sectionStart ..< sectionStart + size]
     }
     var parentBinary: InputBinary {
-        binary!
+        binary
     }
 
     var relocationRange: Range<Index> {
-        offset ..< offset + size
+        sectionStart ..< sectionStart + size
     }
 }
 

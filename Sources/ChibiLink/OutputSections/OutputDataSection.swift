@@ -6,7 +6,7 @@ class OutputSegment {
         let offset: Offset
         let segment: DataSegment
         var relocs: [Relocation]
-        weak var section: Section!
+        weak var section: InputDataSection!
     }
 
     private(set) var chunks: [Chunk] = []
@@ -14,7 +14,7 @@ class OutputSegment {
         self.name = name
     }
 
-    func addInput(_ input: DataSegment, relocs: [Relocation], section: Section) {
+    func addInput(_ input: DataSegment, relocs: [Relocation], section: InputDataSection) {
         alignment = max(alignment, input.info.alignment)
         size = align(size, to: 1 << input.info.alignment)
         chunks.append(Chunk(offset: size, segment: input, relocs: relocs, section: section))
@@ -23,10 +23,10 @@ class OutputSegment {
 }
 
 extension OutputSegment.Chunk: RelocatableChunk {
-    var sectionStart: Offset { section.sectionStart }
+    var sectionStart: Offset { section.offset }
     var relocations: [Relocation] { relocs }
 
-    var parentBinary: InputBinary { section.parentBinary }
+    var parentBinary: InputBinary { section.binary }
 
     var relocationRange: Range<Index> {
         return segment.data.indices
@@ -34,7 +34,7 @@ extension OutputSegment.Chunk: RelocatableChunk {
 }
 
 class OutputDataSection: OutputVectorSection {
-    var section: BinarySection { .data }
+    var section: SectionCode { .data }
     var size: OutputSectionSize { .unknown }
     let count: Size
 
@@ -55,13 +55,14 @@ class OutputDataSection: OutputVectorSection {
         return outputOffsetByInputSegName[key]
     }
 
-    init(sections: [Section]) {
+    init(sections: [InputSection]) {
         var segmentMap: [String: OutputSegment] = [:]
         for section in sections {
+            guard case let .data(section) = section else { preconditionFailure() }
             var relocs = section.relocations.sorted(by: {
                 $0.offset > $1.offset
             })
-            let segments = section.dataSegments.sorted(by: {
+            let segments = section.content.elements.sorted(by: {
                 $0.offset < $1.offset
             })
             for segment in segments {
@@ -115,11 +116,7 @@ class OutputDataSection: OutputVectorSection {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                let segment = relocator.relocate(chunk: chunk)
-                return segment
-                // FIXME
-//                let offset = chunk.segment.data.startIndex - chunk.section.offset
-//                return Array(section[offset ..< offset + chunk.segment.size])
+                return relocator.relocate(chunk: chunk)
             }
         }
     }

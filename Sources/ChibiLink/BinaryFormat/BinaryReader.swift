@@ -1,6 +1,6 @@
 protocol BinaryReaderDelegate {
     func setState(_ state: BinaryReader.State)
-    func beginSection(_ section: BinarySection, size: Size)
+    func beginSection(_ section: SectionCode, size: Size)
     func onImportFunc(
         _ importIndex: Index,
         _ module: String, _ field: String,
@@ -198,7 +198,7 @@ class BinaryReader {
         while !isEOF {
             let sectionCode = readU8Fixed()
             let size = Size(readU32Leb128())
-            guard let section = BinarySection(rawValue: sectionCode) else {
+            guard let section = SectionCode(rawValue: sectionCode) else {
                 throw Error.invalidSectionCode(sectionCode)
             }
             sectionEnd = state.offset + size

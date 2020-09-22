@@ -1,16 +1,20 @@
 class OutputCodeSection: OutputVectorSection {
-    var section: BinarySection { .code }
+    var section: SectionCode { .code }
     var size: OutputSectionSize { .unknown }
     let count: Int
-    let sections: [Section]
+    let sections: [InputVectorSection]
 
-    init(sections: [Section], symbolTable: SymbolTable) {
+    init(sections: [InputSection], symbolTable: SymbolTable) {
         var totalCount = symbolTable.synthesizedFuncs().count
+        var vectorSections: [InputVectorSection] = []
         for section in sections {
-            totalCount += section.count!
+            guard case let .rawVector(code, section) = section,
+                  code == .code else { preconditionFailure() }
+            totalCount += section.content.count
+            vectorSections.append(section)
         }
 
-        self.sections = sections
+        self.sections = vectorSections
         count = totalCount
     }
 
@@ -20,7 +24,7 @@ class OutputCodeSection: OutputVectorSection {
         }
         for section in sections {
             let body = relocator.relocate(chunk: section)
-            let payload = body[(section.payloadOffset! - section.offset)...]
+            let payload = body[(section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)
         }
     }

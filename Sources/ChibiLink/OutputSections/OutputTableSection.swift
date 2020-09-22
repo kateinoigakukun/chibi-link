@@ -1,7 +1,7 @@
 
 class OutputTableSection: OutputVectorSection {
     var count: Int = 1
-    var section: BinarySection { .table }
+    var section: SectionCode { .table }
     var size: OutputSectionSize { .unknown }
 
     let elementCount: Int

@@ -4,7 +4,7 @@ enum OutputSectionSize {
 }
 
 protocol OutputSection {
-    var section: BinarySection { get }
+    var section: SectionCode { get }
     var size: OutputSectionSize { get }
     func write(writer: BinaryWriter, relocator: Relocator) throws
     func writeContent(writer: BinaryWriter, relocator: Relocator) throws

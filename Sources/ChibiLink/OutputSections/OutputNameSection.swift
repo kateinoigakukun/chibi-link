@@ -1,6 +1,6 @@
 #if DEBUG
     class OutputNameSection: OutputCustomSection {
-        var section: BinarySection { .custom }
+        var section: SectionCode { .custom }
         var size: OutputSectionSize { .unknown }
         var name: String { "name" }
         private let inputs: [InputBinary]

@@ -23,58 +23,16 @@ struct Relocation {
     let addend: Int32
 }
 
-class Section {
-    let sectionCode: BinarySection
-    let size: Size
-    let offset: Offset
-
-    var payloadOffset: Offset?
-    var payloadSize: Size?
-    let count: Int?
-
-    var tableElementCount: Int?
-
-    var relocations: [Relocation] = []
-
-    var dataSegments: [DataSegment] = []
-
-    weak var binary: InputBinary?
-
-    init(sectionCode: BinarySection, size: Size, offset: Offset,
-         payloadOffset: Offset?, payloadSize: Size?, count: Int?,
-         binary: InputBinary)
-    {
-        self.sectionCode = sectionCode
-        self.size = size
-        self.offset = offset
-        self.payloadOffset = payloadOffset
-        self.payloadSize = payloadSize
-        self.count = count
-        self.binary = binary
-    }
-
-    #if DEBUG
-    func data() -> [UInt8] {
-        Array(binary!.data[offset..<offset + size])
-    }
-    #endif
-}
-
 class FunctionImport {
     let module: String
     let field: String
     let signatureIdx: Int
-    var unresolved: Bool
-    var relocatedFunctionIndex: Index?
     weak var selfBinary: InputBinary?
-    var foreignBinary: InputBinary?
-    var foreignIndex: Index?
 
-    init(module: String, field: String, signatureIdx: Int, unresolved: Bool, selfBinary: InputBinary) {
+    init(module: String, field: String, signatureIdx: Int, selfBinary: InputBinary) {
         self.module = module
         self.field = field
         self.signatureIdx = signatureIdx
-        self.unresolved = unresolved
         self.selfBinary = selfBinary
     }
 }
@@ -115,7 +73,7 @@ class InputBinary {
     let filename: String
     let data: [UInt8]
 
-    fileprivate(set) var sections: [Section] = []
+    fileprivate(set) var sections: [InputSection] = []
     fileprivate(set) var funcImports: [FunctionImport] = []
     fileprivate(set) var globalImports: [GlobalImport] = []
 
@@ -133,15 +91,15 @@ class InputBinary {
     }
 }
 
-func hasCount(_ section: BinarySection) -> Bool {
+func hasCount(_ section: SectionCode) -> Bool {
     section != .custom && section != .start
 }
 
 class LinkInfoCollector: BinaryReaderDelegate {
     var state: BinaryReader.State!
-    var currentSection: Section!
-    var currentRelocTargetSection: Section!
-    var dataSection: Section!
+    var currentSection: InputSection!
+    var currentRelocTargetSection: InputSection!
+    var dataSection: InputDataSection!
 
     let binary: InputBinary
     let symbolTable: SymbolTable
@@ -154,37 +112,47 @@ class LinkInfoCollector: BinaryReaderDelegate {
         self.state = state
     }
 
-    func beginSection(_ sectionCode: BinarySection, size: Size) {
-        var count: UInt32?
-        var payloadOffset: Offset?
-        var payloadSize: Size?
-        if hasCount(sectionCode) {
+    func beginSection(_ sectionCode: SectionCode, size: Size) {
+        let section: InputSection
+        func parseVector<E>(_: E.Type = E.self) -> InputVectorContent<E> {
             let (itemCount, offset) = decodeULEB128(binary.data[state.offset...], UInt32.self)
             assert(itemCount != 0)
-            count = itemCount
-            payloadOffset = state.offset + offset
-            payloadSize = size - offset
+            let payloadOffset = state.offset + offset
+            let payloadSize = size - offset
+            return InputVectorContent<E>(
+                payloadOffset: payloadOffset, payloadSize: payloadSize, count: Int(itemCount)
+            )
         }
-        let section = Section(
-            sectionCode: sectionCode, size: size, offset: state.offset,
-            payloadOffset: payloadOffset,
-            payloadSize: payloadSize,
-            count: count.map(Int.init),
-            binary: binary
-        )
+        switch sectionCode {
+        case .custom, .start:
+            section = .raw(sectionCode, InputRawSection(size: size, offset: state.offset, binary: binary))
+        case .data:
+            dataSection = InputDataSection(
+                size: size, offset: state.offset, content: parseVector(), binary: binary
+            )
+            section = .data(dataSection)
+        case .elem:
+            section = .element(
+                InputElementSection(
+                    size: size, offset: state.offset, content: parseVector(), binary: binary
+                )
+            )
+        default: // vector section
+            section = .rawVector(
+                sectionCode,
+                InputVectorSection(
+                    size: size, offset: state.offset, content: parseVector(), binary: binary
+                )
+            )
+        }
         binary.sections.append(section)
         currentSection = section
-
-        if sectionCode == .data {
-            dataSection = section
-        }
     }
 
     func onImportFunc(_: Index, _ module: String, _ field: String, _: Int, _ signatureIndex: Index) {
         let funcImport = FunctionImport(
             module: module, field: field,
             signatureIdx: signatureIndex,
-            unresolved: true,
             selfBinary: binary
         )
         binary.funcImports.append(funcImport)
@@ -200,12 +168,9 @@ class LinkInfoCollector: BinaryReaderDelegate {
     }
 
     func onElementSegmentFunctionIndexCount(_: Index, _ indexCount: Int) {
-        // FIXME: Do not assume that table is only one
-        let sec = currentSection!
-        let delta = state.offset - sec.payloadOffset!
-        sec.payloadOffset! += delta
-        sec.payloadSize! -= delta
-        sec.tableElementCount = indexCount
+        guard case let .element(sec) = currentSection else { preconditionFailure() }
+        let segment = ElementSegment(offset: state.offset, elementCount: indexCount)
+        sec.content.elements.append(segment)
     }
 
     func onMemory(_: Index, _: Limits) {}
@@ -216,21 +181,20 @@ class LinkInfoCollector: BinaryReaderDelegate {
     }
 
     func beginDataSegment(_: Index, _ memoryIndex: Index) {
-        let sec = currentSection!
+        guard case let .data(sec) = currentSection else { preconditionFailure() }
         let segment = DataSegment(memoryIndex: memoryIndex)
-        sec.dataSegments.append(segment)
+        sec.content.elements.append(segment)
     }
 
     func onInitExprI32ConstExpr(_: Index, _ value: UInt32) {
-        let sec = currentSection!
-        guard sec.sectionCode == .data else { return }
-        let segment = sec.dataSegments.last!
+        guard case let .data(sec) = currentSection else { return }
+        let segment = sec.content.elements.last!
         segment.offset = Int(value)
     }
 
     func onDataSegmentData(_: Index, _ data: ArraySlice<UInt8>, _ size: Size) {
-        let sec = currentSection!
-        let segment = sec.dataSegments.last!
+        guard case let .data(sec) = currentSection else { preconditionFailure() }
+        let segment = sec.content.elements.last!
         segment.size = size
         segment.data = data
     }
@@ -250,7 +214,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: Int32) {
         let reloc = Relocation(type: type, offset: offset, symbolIndex: symbolIndex, addend: addend)
-        currentRelocTargetSection.relocations.append(reloc)
+        currentRelocTargetSection.append(relocation: reloc)
     }
 
     func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
@@ -293,7 +257,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         let target: DataSymbol.Target
         let flags = SymbolFlags(rawValue: rawFlags)
         if let content = content, !flags.isUndefined {
-            let segment = dataSection.dataSegments[content.segmentIndex]
+            let segment = dataSection.content.elements[content.segmentIndex]
             target = .defined(
                 DataSymbol.DefinedSegment(
                     name: name,
@@ -317,7 +281,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
         let info = DataSegment.Info(name: name, alignment: alignment, flags: flags)
-        dataSection.dataSegments[index].info = info
+        dataSection.content.elements[index].info = info
     }
 
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {

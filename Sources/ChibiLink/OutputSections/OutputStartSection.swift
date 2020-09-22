@@ -1,5 +1,5 @@
 class OutputStartSection: OutputSection {
-    var section: BinarySection { .start }
+    var section: SectionCode { .start }
     let size: OutputSectionSize
     let index: Index
 

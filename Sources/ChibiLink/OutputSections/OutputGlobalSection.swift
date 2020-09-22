@@ -1,23 +1,27 @@
 class OutputGlobalSection: OutputVectorSection {
     typealias Synthesized = GlobalSymbol.Synthesized
-    var section: BinarySection { .global }
+    var section: SectionCode { .global }
     var size: OutputSectionSize { .unknown }
     let count: Int
-    let sections: [Section]
+    let sections: [InputVectorSection]
     private let indexOffsetByFileName: [String: Offset]
 
-    init(sections: [Section], importSection: OutputImportSeciton, symbolTable: SymbolTable) {
+    init(sections: [InputSection], importSection: OutputImportSeciton, symbolTable: SymbolTable) {
         let synthesizedCount = symbolTable.synthesizedGlobals().count
         var totalCount = synthesizedCount
         var indexOffsets: [String: Offset] = [:]
         let offset = importSection.globalCount
+        var vectorSections: [InputVectorSection] = []
 
         for section in sections {
-            indexOffsets[section.binary!.filename] = totalCount + offset
-            totalCount += section.count!
+            guard case let .rawVector(code, section) = section,
+                  code == .global else { preconditionFailure() }
+            indexOffsets[section.binary.filename] = totalCount + offset
+            totalCount += section.content.count
+            vectorSections.append(section)
         }
 
-        self.sections = sections
+        self.sections = vectorSections
         count = totalCount
         indexOffsetByFileName = indexOffsets
     }
@@ -34,7 +38,7 @@ class OutputGlobalSection: OutputVectorSection {
         }
         for section in sections {
             let body = relocator.relocate(chunk: section)
-            let payload = body[(section.payloadOffset! - section.offset)...]
+            let payload = body[(section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)
         }
     }

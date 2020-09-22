@@ -9,7 +9,7 @@ struct OutputImportSeciton: OutputVectorSection {
         }
     }
 
-    var section: BinarySection { .import }
+    var section: SectionCode { .import }
     var size: OutputSectionSize { .unknown }
     var count: Int { imports.count }
     private(set) var functionCount: Int = 0

@@ -17,7 +17,7 @@ class OutputWriter {
     func writeBinary() throws {
         try writer.writeHeader()
 
-        var sectionsMap: [BinarySection: [Section]] = [:]
+        var sectionsMap: [SectionCode: [InputSection]] = [:]
         for sec in inputs.lazy.flatMap(\.sections) {
             sectionsMap[sec.sectionCode, default: []].append(sec)
         }

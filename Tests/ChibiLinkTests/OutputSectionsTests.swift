@@ -2,7 +2,7 @@
 import XCTest
 
 @discardableResult
-func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputSection] {
+func testSections(_ contents: [String: Input]) throws -> [SectionCode: OutputSection] {
     var inputs: [InputBinary] = []
     let symtab = SymbolTable()
     for (filename, input) in contents {
@@ -14,7 +14,7 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputS
         inputs.append(binary)
         print("Linking \(relocatable)")
     }
-    var sectionsMap: [BinarySection: [Section]] = [:]
+    var sectionsMap: [SectionCode: [InputSection]] = [:]
     for sec in inputs.lazy.flatMap(\.sections) {
         sectionsMap[sec.sectionCode, default: []].append(sec)
     }

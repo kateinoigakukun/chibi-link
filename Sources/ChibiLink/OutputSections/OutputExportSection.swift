@@ -9,7 +9,7 @@ class OutputExportSection: OutputVectorSection {
         }
     }
 
-    var section: BinarySection { .export }
+    var section: SectionCode { .export }
     var count: Int { exports.count }
     var size: OutputSectionSize { .unknown }
     private(set) var exports: [Export]

@@ -64,7 +64,7 @@ class BinaryWriter {
         try stream.write(version)
     }
 
-    func writeSectionCode(_ code: BinarySection) throws {
+    func writeSectionCode(_ code: SectionCode) throws {
         try writeFixedUInt8(code.rawValue)
     }
 

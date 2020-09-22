@@ -1,9 +1,9 @@
 class OutputTypeSection: OutputVectorSection {
-    var section: BinarySection { .type }
+    var section: SectionCode { .type }
     var size: OutputSectionSize { .unknown }
     let count: Size
 
-    private let sections: [Section]
+    private let sections: [InputVectorSection]
     private let indexOffsetByFileName: [String: Offset]
     private let symbolTable: SymbolTable
 
@@ -11,18 +11,21 @@ class OutputTypeSection: OutputVectorSection {
         return indexOffsetByFileName[binary.filename]
     }
 
-    init(sections: [Section], symbolTable: SymbolTable) {
+    init(sections: [InputSection], symbolTable: SymbolTable) {
         var totalCount: Int = symbolTable.synthesizedFuncs().filter {
             $0.reuseSignatureIndex == nil
         }.count
         var indexOffsets: [String: Offset] = [:]
+        var typeSections: [InputVectorSection] = []
         for section in sections {
-            assert(section.sectionCode == .type)
-            indexOffsets[section.binary!.filename] = totalCount
-            totalCount += section.count!
+            guard case let .rawVector(code, section) = section,
+                  code == .type else { preconditionFailure() }
+            indexOffsets[section.binary.filename] = totalCount
+            totalCount += section.content.count
+            typeSections.append(section)
         }
         count = totalCount
-        self.sections = sections
+        self.sections = typeSections
         self.symbolTable = symbolTable
         indexOffsetByFileName = indexOffsets
     }
@@ -32,8 +35,8 @@ class OutputTypeSection: OutputVectorSection {
             try synthesizedFunc.writeSignature(writer: writer)
         }
         for section in sections {
-            let offset = section.payloadOffset!
-            let bytes = section.binary!.data[offset ..< offset + section.payloadSize!]
+            let offset = section.content.payloadOffset
+            let bytes = section.binary.data[offset ..< offset + section.content.payloadSize]
             try writer.writeBytes(bytes)
         }
     }

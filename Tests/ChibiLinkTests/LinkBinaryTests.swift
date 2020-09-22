@@ -55,7 +55,7 @@ class InputBinaryTests: XCTestCase {
             )
             """
         let (binary1, _) = try testCollect(content)
-        let expectedSections1: Set<BinarySection> = [
+        let expectedSections1: Set<SectionCode> = [
             .type, .import, .function, .global, .table, .elem, .memory, .data, .code,
         ]
         let actualSections1 = Set(binary1.sections.map(\.sectionCode))
@@ -63,7 +63,6 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(binary1.functionCount, 1)
         XCTAssertEqual(binary1.funcImports.count, 1)
         let firstImport = try XCTUnwrap(binary1.funcImports.first)
-        XCTAssertEqual(firstImport.unresolved, true)
         XCTAssertEqual(firstImport.module, "foo")
         XCTAssertEqual(firstImport.field, "bar")
         XCTAssertEqual(firstImport.signatureIdx, 0)

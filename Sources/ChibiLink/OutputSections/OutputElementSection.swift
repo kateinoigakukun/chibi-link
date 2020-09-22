@@ -1,21 +1,24 @@
 class OutputElementSection: OutputVectorSection {
-    var section: BinarySection { .elem }
+    var section: SectionCode { .elem }
     var size: OutputSectionSize { .unknown }
     let count: Int = 1
     let elementCount: Int
-    private let sections: [Section]
+    private let sections: [InputElementSection]
     private let funcSection: OutputFunctionSection
     private let indexOffsetByFileName: [String: Offset]
 
-    init(sections: [Section], funcSection: OutputFunctionSection) {
+    init(sections: [InputSection], funcSection: OutputFunctionSection) {
         var totalElemCount = 0
         var indexOffsets: [String: Offset] = [:]
+        var elemSections: [InputElementSection] = []
         for section in sections {
-            indexOffsets[section.binary!.filename] = totalElemCount
-            totalElemCount += section.tableElementCount!
+            guard case let .element(section) = section else { preconditionFailure() }
+            indexOffsets[section.binary.filename] = totalElemCount
+            totalElemCount += section.content.elements.reduce(0) { $0 + $1.elementCount }
+            elemSections.append(section)
         }
         elementCount = totalElemCount
-        self.sections = sections
+        self.sections = elemSections
         self.funcSection = funcSection
         indexOffsetByFileName = indexOffsets
     }
@@ -31,17 +34,16 @@ class OutputElementSection: OutputVectorSection {
         try writer.writeULEB128(UInt32(elementCount))
         // Read + Write + Relocate func indexes
         for section in sections {
-            let payloadStart = section.payloadOffset!
-            let payloadSize = section.payloadSize!
-            let payloadEnd = payloadStart + payloadSize
-            var readOffset = payloadStart
-            let binary = section.binary!
+            let binary = section.binary
             let offsetBase = funcSection.indexOffset(for: binary)! - binary.funcImports.count
-            for _ in 0 ..< section.tableElementCount! {
-                let payload = section.binary!.data[readOffset ..< payloadEnd]
-                let (funcIndex, length) = decodeULEB128(payload, UInt32.self)
-                readOffset += length
-                try writer.writeIndex(Index(funcIndex) + offsetBase)
+            for segment in section.content.elements {
+                var readOffset = segment.offset
+                for _ in 0 ..< segment.elementCount {
+                    let payload = section.binary.data[readOffset...]
+                    let (funcIndex, length) = decodeULEB128(payload, UInt32.self)
+                    readOffset += length
+                    try writer.writeIndex(Index(funcIndex) + offsetBase)
+                }
             }
         }
     }

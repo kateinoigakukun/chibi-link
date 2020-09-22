@@ -36,16 +36,6 @@ extension GlobalImport: UndefinedTarget {
 
 protocol SynthesizedTarget: DefinedTarget {}
 
-extension Never: SynthesizedTarget {
-    var name: String {
-        switch self {}
-    }
-
-    var context: String {
-        switch self {}
-    }
-}
-
 enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget, Synthesized: SynthesizedTarget> {
     case defined(Target)
     case undefined(Import)

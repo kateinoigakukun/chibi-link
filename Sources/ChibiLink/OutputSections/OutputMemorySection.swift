@@ -1,5 +1,5 @@
 class OutputMemorySection: OutputVectorSection {
-    var section: BinarySection { .memory }
+    var section: SectionCode { .memory }
     var size: OutputSectionSize { .unknown }
     var count: Int { 1 }
     let pagesCount: Int

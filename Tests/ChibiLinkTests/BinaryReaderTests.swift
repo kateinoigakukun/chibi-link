@@ -7,7 +7,7 @@ class NopDelegate: BinaryReaderDelegate {
         self.state = state
     }
 
-    func beginSection(_: BinarySection, size _: Size) {}
+    func beginSection(_: SectionCode, size _: Size) {}
     func beginNamesSection(_: Size) {}
     func onFunctionName(_: Int, _: String) {}
     func onFunctionCount(_: Int) {}
@@ -91,11 +91,6 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(field, "bar")
             }
 
-            override func onTable(_ tableIndex: Int, _ type: ElementType, _: Limits) {
-                XCTAssertEqual(tableIndex, 0)
-                XCTAssertEqual(type, .funcRef)
-            }
-
             override func onMemory(_ memoryIndex: Int, _ pageLimits: Limits) {
                 XCTAssertEqual(memoryIndex, 0)
                 XCTAssertEqual(pageLimits.initial, 1)
@@ -136,9 +131,9 @@ class BinaryReaderTests: XCTestCase {
         """
         try testRead(Delegate(), content)
         class RelocDelegate: NopDelegate {
-            var sections: [BinarySection] = []
-            var expectedSections: [BinarySection] = [.elem, .code]
-            override func beginSection(_ section: BinarySection, size _: Size) {
+            var sections: [SectionCode] = []
+            var expectedSections: [SectionCode] = [.elem, .code]
+            override func beginSection(_ section: SectionCode, size _: Size) {
                 sections.append(section)
             }
 
