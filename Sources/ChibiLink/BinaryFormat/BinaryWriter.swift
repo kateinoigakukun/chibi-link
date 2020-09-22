@@ -68,7 +68,7 @@ class BinaryWriter {
         try writeFixedUInt8(code.rawValue)
     }
 
-    func writeImport(_ theImport: ImportSeciton.Import) throws {
+    func writeImport(_ theImport: OutputImportSeciton.Import) throws {
         try writeString(theImport.module)
         try writeString(theImport.field)
         switch theImport.kind {
@@ -82,7 +82,7 @@ class BinaryWriter {
         }
     }
 
-    func writeExport(_ theExport: ExportSection.Export) throws {
+    func writeExport(_ theExport: OutputExportSection.Export) throws {
         try writeString(theExport.name)
         switch theExport.kind {
         case let .function(index):

@@ -1,12 +1,12 @@
 
-class TableSection: VectorSection {
+class OutputTableSection: OutputVectorSection {
     var count: Int = 1
     var section: BinarySection { .table }
     var size: OutputSectionSize { .unknown }
 
     let elementCount: Int
 
-    init(elementSection: ElementSection) {
+    init(elementSection: OutputElementSection) {
         elementCount = elementSection.elementCount
     }
 

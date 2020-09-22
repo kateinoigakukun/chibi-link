@@ -27,24 +27,24 @@ extension OutputSection {
     }
 }
 
-protocol VectorSection: OutputSection {
+protocol OutputVectorSection: OutputSection {
     var count: Int { get }
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws
 }
 
-extension VectorSection {
+extension OutputVectorSection {
     func writeContent(writer: BinaryWriter, relocator: Relocator) throws {
         try writer.writeULEB128(UInt32(count))
         try writeVectorContent(writer: writer, relocator: relocator)
     }
 }
 
-protocol CustomSection: OutputSection {
+protocol OutputCustomSection: OutputSection {
     var name: String { get }
     func writeCustomContent(writer: BinaryWriter, relocator: Relocator) throws
 }
 
-extension CustomSection {
+extension OutputCustomSection {
     func writeContent(writer: BinaryWriter, relocator: Relocator) throws {
         try writer.writeString(name)
         try writeCustomContent(writer: writer, relocator: relocator)

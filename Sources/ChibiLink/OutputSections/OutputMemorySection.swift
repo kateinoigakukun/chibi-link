@@ -1,10 +1,10 @@
-class MemorySection: VectorSection {
+class OutputMemorySection: OutputVectorSection {
     var section: BinarySection { .memory }
     var size: OutputSectionSize { .unknown }
     var count: Int { 1 }
     let pagesCount: Int
 
-    init(dataSection: DataSection) {
+    init(dataSection: OutputDataSection) {
         // static data size + stack area size
         let size = dataSection.initialMemorySize + PAGE_SIZE
         pagesCount = align(size, to: PAGE_SIZE) / PAGE_SIZE

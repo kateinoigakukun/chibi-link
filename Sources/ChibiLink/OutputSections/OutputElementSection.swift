@@ -1,13 +1,13 @@
-class ElementSection: VectorSection {
+class OutputElementSection: OutputVectorSection {
     var section: BinarySection { .elem }
     var size: OutputSectionSize { .unknown }
     let count: Int = 1
     let elementCount: Int
     private let sections: [Section]
-    private let funcSection: FunctionSection
+    private let funcSection: OutputFunctionSection
     private let indexOffsetByFileName: [String: Offset]
 
-    init(sections: [Section], funcSection: FunctionSection) {
+    init(sections: [Section], funcSection: OutputFunctionSection) {
         var totalElemCount = 0
         var indexOffsets: [String: Offset] = [:]
         for section in sections {

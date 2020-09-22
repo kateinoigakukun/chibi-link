@@ -22,17 +22,17 @@ extension Section: RelocatableChunk {
 
 class Relocator {
     let symbolTable: SymbolTable
-    let typeSection: TypeSection
-    let importSection: ImportSeciton
-    let funcSection: FunctionSection
-    let elemSection: ElementSection
-    let dataSection: DataSection
-    let globalSection: GlobalSection
+    let typeSection: OutputTypeSection
+    let importSection: OutputImportSeciton
+    let funcSection: OutputFunctionSection
+    let elemSection: OutputElementSection
+    let dataSection: OutputDataSection
+    let globalSection: OutputGlobalSection
 
-    init(symbolTable: SymbolTable, typeSection: TypeSection,
-         importSection: ImportSeciton, funcSection: FunctionSection,
-         elemSection: ElementSection, dataSection: DataSection,
-         globalSection: GlobalSection)
+    init(symbolTable: SymbolTable, typeSection: OutputTypeSection,
+         importSection: OutputImportSeciton, funcSection: OutputFunctionSection,
+         elemSection: OutputElementSection, dataSection: OutputDataSection,
+         globalSection: OutputGlobalSection)
     {
         self.symbolTable = symbolTable
         self.typeSection = typeSection

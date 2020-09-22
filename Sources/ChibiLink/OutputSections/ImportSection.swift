@@ -1,4 +1,4 @@
-struct ImportSeciton: VectorSection {
+struct OutputImportSeciton: OutputVectorSection {
     struct Import {
         let kind: Kind
         let module: String
@@ -29,7 +29,7 @@ struct ImportSeciton: VectorSection {
         return importGlobalIndexMap[key]
     }
 
-    init(symbolTable: SymbolTable, typeSection: TypeSection) {
+    init(symbolTable: SymbolTable, typeSection: OutputTypeSection) {
         func addImport<S>(_ symbol: S) where S: SymbolProtocol {
             guard let newImport = createImport(symbol, typeSection: typeSection) else { return }
 
@@ -76,8 +76,8 @@ private func uniqueImportKey(module: String, field: String) -> String {
     module + "." + field
 }
 
-private func createImport<S>(_ symbol: S, typeSection: TypeSection) -> ImportSeciton.Import? where S: SymbolProtocol {
-    typealias Import = ImportSeciton.Import
+private func createImport<S>(_ symbol: S, typeSection: OutputTypeSection) -> OutputImportSeciton.Import? where S: SymbolProtocol {
+    typealias Import = OutputImportSeciton.Import
     guard !symbol.flags.isWeak else { return nil }
     switch symbol.target {
     case .defined, .synthesized: return nil

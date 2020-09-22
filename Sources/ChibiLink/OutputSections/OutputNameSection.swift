@@ -1,11 +1,11 @@
 #if DEBUG
-    class NameSection: CustomSection {
+    class OutputNameSection: OutputCustomSection {
         var section: BinarySection { .custom }
         var size: OutputSectionSize { .unknown }
         var name: String { "name" }
         private let inputs: [InputBinary]
-        private let funcSection: FunctionSection
-        init(inputs: [InputBinary], funcSection: FunctionSection) {
+        private let funcSection: OutputFunctionSection
+        init(inputs: [InputBinary], funcSection: OutputFunctionSection) {
             self.inputs = inputs
             self.funcSection = funcSection
         }

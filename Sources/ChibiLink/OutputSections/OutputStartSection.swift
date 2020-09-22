@@ -1,9 +1,9 @@
-class StartSection: OutputSection {
+class OutputStartSection: OutputSection {
     var section: BinarySection { .start }
     let size: OutputSectionSize
     let index: Index
 
-    init?(symbolTable: SymbolTable, funcSection: FunctionSection) {
+    init?(symbolTable: SymbolTable, funcSection: OutputFunctionSection) {
         guard case let .function(symbol) = symbolTable.find("_start") else {
             return nil
         }

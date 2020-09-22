@@ -1,4 +1,4 @@
-class CodeSection: VectorSection {
+class OutputCodeSection: OutputVectorSection {
     var section: BinarySection { .code }
     var size: OutputSectionSize { .unknown }
     let count: Int

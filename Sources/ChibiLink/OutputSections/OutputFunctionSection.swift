@@ -1,14 +1,14 @@
-class FunctionSection: VectorSection {
+class OutputFunctionSection: OutputVectorSection {
     var section: BinarySection { .function }
     var size: OutputSectionSize { .unknown }
     let count: Int
     private let sections: [Section]
-    private let typeSection: TypeSection
+    private let typeSection: OutputTypeSection
     private let indexOffsetByFileName: [String: Offset]
 
     init(sections: [Section],
-         typeSection: TypeSection,
-         importSection: ImportSeciton,
+         typeSection: OutputTypeSection,
+         importSection: OutputImportSeciton,
          symbolTable: SymbolTable
     ) {
         var totalCount = symbolTable.synthesizedFuncs().count

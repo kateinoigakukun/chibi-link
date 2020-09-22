@@ -33,7 +33,7 @@ extension OutputSegment.Chunk: RelocatableChunk {
     }
 }
 
-class DataSection: VectorSection {
+class OutputDataSection: OutputVectorSection {
     var section: BinarySection { .data }
     var size: OutputSectionSize { .unknown }
     let count: Size

@@ -12,9 +12,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onFunctionName(_: Int, _: String) {}
     func onFunctionCount(_: Int) {}
     func onImportFunc(_: Int, _: String, _: String, _: Int, _: Int) {}
-    func onImportMemory(_: Int, _: String, _: String, _: Int, _: Limits) {}
     func onImportGlobal(_: Int, _: String, _: String, _: Int, _: ValueType, _: Bool) {}
-    func onTable(_: Int, _: ElementType, _: Limits) {}
     func onMemory(_: Int, _: Limits) {}
     func onExport(_: Int, _: ExternalKind, _: Int, _: String) {}
     func onElementSegmentFunctionIndexCount(_: Int, _: Int) {}

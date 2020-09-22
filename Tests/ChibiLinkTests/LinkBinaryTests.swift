@@ -60,7 +60,6 @@ class InputBinaryTests: XCTestCase {
         ]
         let actualSections1 = Set(binary1.sections.map(\.sectionCode))
         XCTAssertEqual(actualSections1, expectedSections1)
-        XCTAssertEqual(binary1.tableElemSize, 1)
         XCTAssertEqual(binary1.functionCount, 1)
         XCTAssertEqual(binary1.funcImports.count, 1)
         let firstImport = try XCTUnwrap(binary1.funcImports.first)

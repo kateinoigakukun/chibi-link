@@ -18,19 +18,19 @@ func testSections(_ contents: [String: Input]) throws -> [BinarySection: OutputS
     for sec in inputs.lazy.flatMap(\.sections) {
         sectionsMap[sec.sectionCode, default: []].append(sec)
     }
-    let typeSection = TypeSection(sections: sectionsMap[.type] ?? [], symbolTable: symtab)
-    let importSection = ImportSeciton(symbolTable: symtab, typeSection: typeSection)
-    let funcSection = FunctionSection(
+    let typeSection = OutputTypeSection(sections: sectionsMap[.type] ?? [], symbolTable: symtab)
+    let importSection = OutputImportSeciton(symbolTable: symtab, typeSection: typeSection)
+    let funcSection = OutputFunctionSection(
         sections: sectionsMap[.function] ?? [],
         typeSection: typeSection, importSection: importSection, symbolTable: symtab
     )
-    let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
-    let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
-    let memorySection = MemorySection(dataSection: dataSection)
-    let elemSection = ElementSection(
+    let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
+    let codeSection = OutputCodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
+    let memorySection = OutputMemorySection(dataSection: dataSection)
+    let elemSection = OutputElementSection(
         sections: sectionsMap[.elem] ?? [], funcSection: funcSection
     )
-    let tableSection = TableSection(elementSection: elemSection)
+    let tableSection = OutputTableSection(elementSection: elemSection)
     return [
         .type: typeSection,
         .import: importSection,
@@ -66,7 +66,7 @@ class OutputSectionsTests: XCTestCase {
             @external_ref2 = global i8** @bye_str, section "another_sec", align 4
             """),
         ])
-        let outSection = sections[.data]! as! DataSection
+        let outSection = sections[.data]! as! OutputDataSection
         XCTAssertEqual(outSection.count, 2)
         XCTAssertEqual(outSection.count, outSection.segments.count)
 
@@ -106,7 +106,7 @@ class OutputSectionsTests: XCTestCase {
             }
             """),
         ])
-        let outSection = sections[.elem]! as! ElementSection
+        let outSection = sections[.elem]! as! OutputElementSection
         XCTAssertEqual(outSection.elementCount, 1)
     }
 }

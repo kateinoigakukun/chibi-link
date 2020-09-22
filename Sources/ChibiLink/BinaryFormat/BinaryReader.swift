@@ -8,12 +8,6 @@ protocol BinaryReaderDelegate {
         _ signatureIndex: Index
     )
 
-    func onImportMemory(
-        _ importIndex: Index,
-        _ module: String, _ field: String,
-        _ memoryIndex: Index, _ pageLimits: Limits
-    )
-
     func onImportGlobal(
         _ importIndex: Index,
         _ module: String, _ field: String,
@@ -23,7 +17,6 @@ protocol BinaryReaderDelegate {
 
     func onFunctionCount(_ count: Int)
 
-    func onTable(_ tableIndex: Index, _ type: ElementType, _ limits: Limits)
     func onMemory(_ memoryIndex: Index, _ pageLimits: Limits)
     func onExport(_ exportIndex: Index, _ kind: ExternalKind,
                   _ itemIndex: Index, _ name: String)
@@ -42,8 +35,6 @@ protocol BinaryReaderDelegate {
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
 
-//    func onSymbolCount(_ count: Int)
-//    func onSymbol(_ index: Index, _ type: SymbolType, _ flags: UInt32)
     func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
     func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
     func onDataSymbol(
@@ -269,13 +260,7 @@ class BinaryReader {
                 // onImportTable
                 tableImportCount += 1
             case .memory:
-                let limits = try readMemory()
-                delegate.onImportMemory(
-                    importIdx,
-                    module, field,
-                    memoryImportCount,
-                    limits
-                )
+                _ = try readMemory()
                 memoryImportCount += 1
             case .global:
                 let (type, mutable) = try readGlobalHeader()
@@ -299,10 +284,8 @@ class BinaryReader {
     func readTableSection(sectionSize _: Size) throws {
         let tablesCount = Int(readU32Leb128())
         assert(tablesCount <= 1)
-        for i in 0 ..< tablesCount {
-            let tableIdx: Index = tableImportCount + i
-            let (elemTy, limits) = try readTable()
-            delegate.onTable(tableIdx, elemTy, limits)
+        for _ in 0 ..< tablesCount {
+            _ = try readTable()
         }
     }
 
@@ -454,13 +437,11 @@ class BinaryReader {
 
     func readSymbolTable() {
         let count = Int(readU32Leb128())
-//                delegate.onSymbolCount(count)
         for i in 0 ..< count {
             let symTypeCode = readU8Fixed()
             let symFlags = readU32Leb128()
             let symType = SymbolType(rawValue: symTypeCode)!
             let binding = symFlags & SYMBOL_BINDING_MASK
-//                    delegate.onSymbol(i, symType, symFlags)
 
             switch symType {
             case .function, .global:

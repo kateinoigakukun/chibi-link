@@ -122,7 +122,6 @@ class InputBinary {
     fileprivate(set) var exports: [Export] = []
 
     fileprivate(set) var functionCount: Int!
-    fileprivate(set) var tableElemSize: Size = 0
 
     fileprivate(set) var debugNames: [String] = []
     fileprivate(set) var symbols: [Symbol] = []
@@ -141,7 +140,7 @@ func hasCount(_ section: BinarySection) -> Bool {
 class LinkInfoCollector: BinaryReaderDelegate {
     var state: BinaryReader.State!
     var currentSection: Section!
-    var currentRelocSection: Section!
+    var currentRelocTargetSection: Section!
     var dataSection: Section!
 
     let binary: InputBinary
@@ -191,10 +190,6 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.funcImports.append(funcImport)
     }
 
-    func onImportMemory(_: Index, _: String, _: String, _: Index, _: Limits) {
-//        fatalError("TODO")
-    }
-
     func onImportGlobal(_: Index, _ module: String, _ field: String, _: Index, _ type: ValueType, _ mutable: Bool) {
         let globalImport = GlobalImport(module: module, field: field, type: type, mutable: mutable)
         binary.globalImports.append(globalImport)
@@ -202,10 +197,6 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onFunctionCount(_ count: Int) {
         binary.functionCount = count
-    }
-
-    func onTable(_: Index, _: ElementType, _ limits: Limits) {
-        binary.tableElemSize = limits.initial
     }
 
     func onElementSegmentFunctionIndexCount(_: Index, _ indexCount: Int) {
@@ -254,12 +245,12 @@ class LinkInfoCollector: BinaryReaderDelegate {
     }
 
     func onRelocCount(_: Int, _ sectionIndex: Index) {
-        currentRelocSection = binary.sections[sectionIndex]
+        currentRelocTargetSection = binary.sections[sectionIndex]
     }
 
     func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: Int32) {
         let reloc = Relocation(type: type, offset: offset, symbolIndex: symbolIndex, addend: addend)
-        currentRelocSection.relocations.append(reloc)
+        currentRelocTargetSection.relocations.append(reloc)
     }
 
     func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {

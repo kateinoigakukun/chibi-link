@@ -1,4 +1,4 @@
-class ExportSection: VectorSection {
+class OutputExportSection: OutputVectorSection {
     struct Export {
         let kind: Kind
         let name: String
@@ -21,17 +21,17 @@ class ExportSection: VectorSection {
     init(
         symbolTable: SymbolTable,
         exportSymbols: [String],
-        funcSection: FunctionSection,
-        globalSection: GlobalSection
+        funcSection: OutputFunctionSection,
+        globalSection: OutputGlobalSection
     ) {
         var exports: [Export] = []
         func exportFunction(_ target: IndexableTarget) {
             let base = funcSection.indexOffset(for: target.binary)!
             let index = base + target.itemIndex - target.binary.funcImports.count
-            exports.append(ExportSection.Export(kind: .function(index), name: target.name))
+            exports.append(OutputExportSection.Export(kind: .function(index), name: target.name))
         }
 
-        exports.append(ExportSection.Export(kind: .memory(0), name: "memory"))
+        exports.append(OutputExportSection.Export(kind: .memory(0), name: "memory"))
         if case let .function(symbol) = symbolTable.find("_start"),
            case let .defined(target) = symbol.target {
             exportFunction(target)

@@ -24,43 +24,43 @@ class OutputWriter {
 
         synthesizeFunctionSymbols()
 
-        let typeSection = TypeSection(
+        let typeSection = OutputTypeSection(
             sections: sectionsMap[.type] ?? [], symbolTable: symbolTable
         )
-        let dataSection = DataSection(sections: sectionsMap[.data] ?? [])
+        let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
 
         synthesizeDataSymbols(dataSection: dataSection)
         synthesizeStackPointer(dataSection: dataSection)
 
-        let importSection = ImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
-        let funcSection = FunctionSection(
+        let importSection = OutputImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
+        let funcSection = OutputFunctionSection(
             sections: sectionsMap[.function] ?? [],
             typeSection: typeSection, importSection: importSection, symbolTable: symbolTable
         )
-        let globalSection = GlobalSection(
+        let globalSection = OutputGlobalSection(
             sections: sectionsMap[.global] ?? [],
             importSection: importSection, symbolTable: symbolTable
         )
-        let exportSection = ExportSection(
+        let exportSection = OutputExportSection(
             symbolTable: symbolTable,
             exportSymbols: exportSymbols,
             funcSection: funcSection,
             globalSection: globalSection
         )
-        let codeSection = CodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
-        let memorySection = MemorySection(dataSection: dataSection)
-        let elemSection = ElementSection(
+        let codeSection = OutputCodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
+        let memorySection = OutputMemorySection(dataSection: dataSection)
+        let elemSection = OutputElementSection(
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
         )
-        let tableSection = TableSection(elementSection: elemSection)
+        let tableSection = OutputTableSection(elementSection: elemSection)
         /*
-        let startSection = StartSection(
+        let startSection = OutputStartSection(
             symbolTable: symbolTable, funcSection: funcSection
         )
         */
 
         #if DEBUG
-            let nameSectino = NameSection(inputs: inputs, funcSection: funcSection)
+            let nameSectino = OutputNameSection(inputs: inputs, funcSection: funcSection)
         #endif
 
         let relocator = Relocator(
@@ -106,7 +106,7 @@ class OutputWriter {
         debug("\(name) is synthesized")
     }
 
-    func synthesizeDataSymbols(dataSection: DataSection) {
+    func synthesizeDataSymbols(dataSection: OutputDataSection) {
         func addSynthesizedSymbol(name: String, address: Offset) {
             let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
@@ -121,7 +121,7 @@ class OutputWriter {
         addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
 
-    func synthesizeStackPointer(dataSection: DataSection) {
+    func synthesizeStackPointer(dataSection: OutputDataSection) {
         // Stack area is allocated **after** static data
         let stackAlignment = 16
         let stackStart = Int32(align(dataSection.initialMemorySize + PAGE_SIZE, to: stackAlignment))

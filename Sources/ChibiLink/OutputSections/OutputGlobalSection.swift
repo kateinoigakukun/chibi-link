@@ -1,4 +1,4 @@
-class GlobalSection: VectorSection {
+class OutputGlobalSection: OutputVectorSection {
     typealias Synthesized = GlobalSymbol.Synthesized
     var section: BinarySection { .global }
     var size: OutputSectionSize { .unknown }
@@ -6,7 +6,7 @@ class GlobalSection: VectorSection {
     let sections: [Section]
     private let indexOffsetByFileName: [String: Offset]
 
-    init(sections: [Section], importSection: ImportSeciton, symbolTable: SymbolTable) {
+    init(sections: [Section], importSection: OutputImportSeciton, symbolTable: SymbolTable) {
         let synthesizedCount = symbolTable.synthesizedGlobals().count
         var totalCount = synthesizedCount
         var indexOffsets: [String: Offset] = [:]
