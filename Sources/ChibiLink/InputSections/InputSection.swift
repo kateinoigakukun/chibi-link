@@ -1,6 +1,8 @@
-struct ElementSegment {
+struct Relocation {
+    let type: RelocType
     let offset: Offset
-    let elementCount: Int
+    let symbolIndex: Index
+    let addend: Int32
 }
 
 class InputVectorContent<Element> {
@@ -32,8 +34,6 @@ class GenericInputSection<Content> {
     }
 }
 
-typealias InputDataSection = GenericInputSection<InputVectorContent<DataSegment>>
-typealias InputElementSection = GenericInputSection<InputVectorContent<ElementSegment>>
 typealias InputVectorSection = GenericInputSection<InputVectorContent<Never>>
 typealias InputRawSection = GenericInputSection<Void>
 
