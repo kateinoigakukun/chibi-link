@@ -1,11 +1,13 @@
 #if canImport(Darwin)
     import Darwin
-#elseif canImport(Glibc)
-    import Glibc
+#elseif canImport(WASILibc)
+    import WASILibc
     let ENOENT: Int32 = 2
     let EACCES: Int32 = 13
     let ENOTDIR: Int32 = 20
     let EISDIR: Int32 = 21
+#elseif canImport(Glibc)
+    import Glibc
 #endif
 
 enum FileSystemError: Error {

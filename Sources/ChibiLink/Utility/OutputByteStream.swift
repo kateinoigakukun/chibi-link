@@ -1,10 +1,13 @@
 #if canImport(Darwin)
     import Darwin
     typealias FilePointer = UnsafeMutablePointer<FILE>
-#elseif canImport(Glibc)
-    import Glibc
+#elseif canImport(WASILibc)
+    import WASILibc
 
     let SEEK_SET: Int32 = 0
+    typealias FilePointer = OpaquePointer
+#elseif canImport(Glibc)
+    import Glibc
     typealias FilePointer = OpaquePointer
 #endif
 
