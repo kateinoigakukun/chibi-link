@@ -5,13 +5,11 @@ import PackageDescription
 let package = Package(
     name: "ChibiLink",
     products: [
-        .executable(name: "strip-debug", targets: ["strip-debug"]),
         .executable(name: "chibi-link", targets: ["chibi-link"]),
         .library(name: "ChibiLink", targets: ["ChibiLink"]),
     ],
     dependencies: [],
     targets: [
-        .target(name: "strip-debug", dependencies: []),
         .target(name: "chibi-link", dependencies: ["ChibiLink"]),
         .target(name: "ChibiLink"),
         .testTarget(name: "ChibiLinkTests", dependencies: ["ChibiLink"]),
