@@ -22,7 +22,7 @@ jobs:
         TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-osx.tar.gz"
         wget $TOOLCHAIN_URL
         tar xfz $VERSION-osx.tar.gz
-        echo "::set-env name=SWIFT_TOOLCHAIN::$PWD/$VERSION/usr"
+        echo "SWIFT_TOOLCHAIN=$PWD/$VERSION/usr" >> $GITHUB_ENV
     - name: Build Fixtures
       run: |
         cd Fixtures
