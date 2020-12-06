@@ -112,7 +112,7 @@ class BinaryReaderTests: XCTestCase {
             }
 
             override func onDataSegmentData(_: Int, _ data: ArraySlice<UInt8>, _: Int) {
-                let hello = String(decoding: data, as: Unicode.ASCII.self)
+                let hello = String(decoding: data, as: Unicode.UTF8.self)
                 XCTAssertEqual(hello, "hello")
             }
         }

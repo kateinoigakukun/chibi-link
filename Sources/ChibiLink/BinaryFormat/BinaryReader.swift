@@ -114,7 +114,7 @@ class BinaryReader {
     func readString() -> String {
         let length = Int(readU32Leb128())
         let bytes = state.bytes[state.offset ..< state.offset + length]
-        let name = String(decoding: bytes, as: Unicode.ASCII.self)
+        let name = String(decoding: bytes, as: Unicode.UTF8.self)
         state.offset += length
         return name
     }
