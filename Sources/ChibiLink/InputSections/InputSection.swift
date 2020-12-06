@@ -57,7 +57,20 @@ enum InputSection {
              let .rawVector(code, _): return code
         }
     }
-    
+
+    func reserveRelocCapacity(_ count: Int) {
+        switch self {
+        case .data(let sec):
+            sec.relocations.reserveCapacity(count)
+        case .element(let sec):
+            sec.relocations.reserveCapacity(count)
+        case .raw(_, let sec):
+            sec.relocations.reserveCapacity(count)
+        case .rawVector(_, let sec):
+            sec.relocations.reserveCapacity(count)
+        }
+    }
+
     func append(relocation: Relocation) {
         switch self {
         case .data(let sec):

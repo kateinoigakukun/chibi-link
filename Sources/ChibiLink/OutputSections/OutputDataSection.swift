@@ -18,7 +18,7 @@ class OutputSegment {
         alignment = max(alignment, input.info.alignment)
         size = align(size, to: 1 << input.info.alignment)
         chunks.append(Chunk(offset: size, segment: input, relocs: relocs, section: section))
-        size += input.size
+        size += input.dataRange.count
     }
 }
 
@@ -29,7 +29,7 @@ extension OutputSegment.Chunk: RelocatableChunk {
     var parentBinary: InputBinary { section.binary }
 
     var relocationRange: Range<Index> {
-        return segment.data.indices
+        return segment.dataRange
     }
 }
 
@@ -78,8 +78,8 @@ class OutputDataSection: OutputVectorSection {
                 }
 
                 var segmentRelocs: [Relocation] = []
-                let rangeStart = segment.data.startIndex - section.offset
-                let rangeEnd = segment.data.endIndex - section.offset
+                let rangeStart = segment.dataRange.startIndex - section.offset
+                let rangeEnd = segment.dataRange.endIndex - section.offset
                 while let headReloc = relocs.last,
                       (rangeStart..<rangeEnd).contains(headReloc.offset)
                 {

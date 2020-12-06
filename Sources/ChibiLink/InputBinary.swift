@@ -48,7 +48,7 @@ class InputBinary {
     typealias ID = Int
     let id: ID
     let filename: String
-    let data: [UInt8]
+    var data: [UInt8]
 
     var sections: [InputSection] = []
     var funcImports: [FunctionImport] = []

@@ -1,5 +1,5 @@
 protocol BinaryReaderDelegate {
-    func setState(_ state: BinaryReader.State)
+    func setState(_ state: BinaryReaderState)
     func beginSection(_ section: SectionCode, size: Size)
     func onImportFunc(
         _ importIndex: Index,
@@ -23,7 +23,7 @@ protocol BinaryReaderDelegate {
     func onElementSegmentFunctionIndexCount(_ segmentIndex: Index, _ indexCount: Int)
 
     func beginDataSegment(_ segmentIndex: Index, _ memoryIndex: Index)
-    func onDataSegmentData(_ segmentIndex: Index, _ data: ArraySlice<UInt8>, _ size: Size)
+    func onDataSegmentData(_ segmentIndex: Index, _ dataRange: Range<Int>)
 
     func beginNamesSection(_ size: Size)
     func onFunctionName(_ index: Index, _ name: String)
@@ -46,7 +46,17 @@ protocol BinaryReaderDelegate {
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32)
 }
 
-class BinaryReader {
+
+class BinaryReaderState {
+    fileprivate(set) var offset: Offset = 0
+    let bytes: [UInt8]
+
+    init(bytes: [UInt8]) {
+        self.bytes = bytes
+    }
+}
+
+class BinaryReader<Delegate: BinaryReaderDelegate> {
     enum Error: Swift.Error {
         case invalidSectionCode(UInt8)
         case invalidElementType(UInt8)
@@ -58,18 +68,10 @@ class BinaryReader {
         case expectEnd
     }
 
-    class State {
-        fileprivate(set) var offset: Offset = 0
-        let bytes: [UInt8]
-
-        init(bytes: [UInt8]) {
-            self.bytes = bytes
-        }
-    }
-
+    typealias State = BinaryReaderState
     let length: Int
     let state: State
-    var delegate: BinaryReaderDelegate
+    var delegate: Delegate
 
     var funcImportCount = 0
     var tableImportCount = 0
@@ -77,7 +79,7 @@ class BinaryReader {
     var globalImportCount = 0
     var sectionEnd: Int!
 
-    init(bytes: [UInt8], delegate: BinaryReaderDelegate) {
+    init(bytes: [UInt8], delegate: Delegate) {
         length = bytes.count
         state = State(bytes: bytes)
         self.delegate = delegate
@@ -335,8 +337,10 @@ class BinaryReader {
             // BeginDataSegmentInitExpr
             try readI32InitExpr(segmentIndex: i)
             // EndDataSegmentInitExpr
-            let (data, size) = readBytes()
-            delegate.onDataSegmentData(i, data, size)
+            let size = Size(readU32Leb128())
+            let range = state.offset ..< state.offset + size
+            state.offset += size
+            delegate.onDataSegmentData(i, range)
             // EndDataSegment
         }
         // EndDataSection

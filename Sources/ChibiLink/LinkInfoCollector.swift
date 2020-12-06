@@ -1,6 +1,6 @@
 
 class LinkInfoCollector: BinaryReaderDelegate {
-    var state: BinaryReader.State!
+    var state: BinaryReaderState!
     var currentSection: InputSection!
     var currentRelocTargetSection: InputSection!
     var dataSection: InputDataSection!
@@ -12,7 +12,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         self.symbolTable = symbolTable
     }
 
-    func setState(_ state: BinaryReader.State) {
+    func setState(_ state: BinaryReaderState) {
         self.state = state
     }
 
@@ -84,9 +84,9 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.exports.append(export)
     }
 
-    func beginDataSegment(_: Index, _ memoryIndex: Index) {
+    func beginDataSegment(_ index: Index, _ memoryIndex: Index) {
         guard case let .data(sec) = currentSection else { preconditionFailure() }
-        let segment = DataSegment(index: sec.content.elements.count, memoryIndex: memoryIndex)
+        let segment = DataSegment(index: index, memoryIndex: memoryIndex)
         sec.content.elements.append(segment)
     }
 
@@ -96,11 +96,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
         segment.offset = Int(value)
     }
 
-    func onDataSegmentData(_: Index, _ data: ArraySlice<UInt8>, _ size: Size) {
+    func onDataSegmentData(_: Index, _ dataRange: Range<Int>) {
         guard case let .data(sec) = currentSection else { preconditionFailure() }
         let segment = sec.content.elements.last!
-        segment.size = size
-        segment.data = data
+        segment.dataRange = dataRange
     }
 
     func beginNamesSection(_: Size) {
@@ -112,8 +111,9 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.debugNames[index] = name
     }
 
-    func onRelocCount(_: Int, _ sectionIndex: Index) {
+    func onRelocCount(_ count: Int, _ sectionIndex: Index) {
         currentRelocTargetSection = binary.sections[sectionIndex]
+        currentRelocTargetSection.reserveRelocCapacity(count)
     }
 
     func onReloc(_ type: RelocType, _ offset: Offset, _ symbolIndex: Index, _ addend: Int32) {

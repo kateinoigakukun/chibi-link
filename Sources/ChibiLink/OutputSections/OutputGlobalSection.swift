@@ -38,7 +38,7 @@ class OutputGlobalSection: OutputVectorSection {
         }
         for section in sections {
             let body = relocator.relocate(chunk: section)
-            let payload = body[(section.content.payloadOffset - section.offset)...]
+            let payload = body[(section.sectionStart + section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)
         }
     }

@@ -252,7 +252,8 @@ enum Symbol {
 }
 
 class SymbolTable {
-    private var symbolMap: [String: Symbol] = [:]
+    private typealias StringHash = Int
+    private var symbolMap: [StringHash: Symbol] = [:]
     private var synthesizedGlobalIndexMap: [String: Index] = [:]
     private var synthesizedFunctionIndexMap: [String: Index] = [:]
     private var synthesizedDataIndexMap: [String: Index] = [:]
@@ -281,20 +282,21 @@ class SymbolTable {
     }
 
     func find(_ name: String) -> Symbol? {
-        return symbolMap[name]
+        return symbolMap[name.hashValue]
     }
 
     func addFunctionSymbol(_ target: FunctionSymbol.Target,
                            flags: SymbolFlags) -> FunctionSymbol
     {
+        let targetName: StringHash = target.name.hashValue
         func indexSynthesizedFn() {
             guard case let .synthesized(target) = target else { return }
             synthesizedFunctionIndexMap[target.name] = _synthesizedFunctions.count
             _synthesizedFunctions.append(target)
         }
-        guard let existing = symbolMap[target.name] else {
+        guard let existing = symbolMap[targetName] else {
             let newSymbol = FunctionSymbol(target: target, flags: flags)
-            symbolMap[target.name] = .function(newSymbol)
+            symbolMap[targetName] = .function(newSymbol)
             indexSynthesizedFn()
             return newSymbol
         }
@@ -331,14 +333,15 @@ class SymbolTable {
     func addGlobalSymbol(_ target: GlobalSymbol.Target,
                          flags: SymbolFlags) -> GlobalSymbol
     {
+        let targetName: StringHash = target.name.hashValue
         func indexSynthesizedGlobal() {
             guard case let .synthesized(target) = target else { return }
             synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
             _synthesizedGlobals.append(target)
         }
-        guard let existing = symbolMap[target.name] else {
+        guard let existing = symbolMap[targetName] else {
             let newSymbol = GlobalSymbol(target: target, flags: flags)
-            symbolMap[target.name] = .global(newSymbol)
+            symbolMap[targetName] = .global(newSymbol)
             indexSynthesizedGlobal()
             return newSymbol
         }
@@ -375,14 +378,15 @@ class SymbolTable {
     func addDataSymbol(_ target: DataSymbol.Target,
                        flags: SymbolFlags) -> DataSymbol
     {
+        let targetName: StringHash = target.name.hashValue
         func indexSynthesizedData() {
             guard case let .synthesized(target) = target else { return }
             synthesizedDataIndexMap[target.name] = _synthesizedData.count
             _synthesizedData.append(target)
         }
-        guard let existing = symbolMap[target.name] else {
+        guard let existing = symbolMap[targetName] else {
             let newSymbol = DataSymbol(target: target, flags: flags)
-            symbolMap[target.name] = .data(newSymbol)
+            symbolMap[targetName] = .data(newSymbol)
             return newSymbol
         }
 

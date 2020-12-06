@@ -2,8 +2,8 @@
 import XCTest
 
 class NopDelegate: BinaryReaderDelegate {
-    var state: BinaryReader.State!
-    func setState(_ state: BinaryReader.State) {
+    var state: BinaryReaderState!
+    func setState(_ state: BinaryReaderState) {
         self.state = state
     }
 
@@ -18,7 +18,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onElementSegmentFunctionIndexCount(_: Int, _: Int) {}
     func onInitExprI32ConstExpr(_: Int, _: UInt32) {}
     func beginDataSegment(_: Int, _: Int) {}
-    func onDataSegmentData(_: Int, _: ArraySlice<UInt8>, _: Int) {}
+    func onDataSegmentData(_: Int, _: Range<Int>) {}
     func onRelocCount(_: Int, _: Int) {}
     func onReloc(_: RelocType, _: Offset, _: Index, _: Int32) {}
     func onFunctionSymbol(_: Index, _: UInt32, _: String?, _: Index) {}
@@ -31,7 +31,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {}
 }
 
-func testRead(_ delegate: BinaryReaderDelegate, options: [String] = [], _ content: String) throws {
+func testRead<D: BinaryReaderDelegate>(_ delegate: D, options: [String] = [], _ content: String) throws {
     let output = compileWat(content, options: options)
     let bytes = try Array(Data(contentsOf: output))
     let reader = BinaryReader(bytes: bytes, delegate: delegate)
@@ -109,11 +109,6 @@ class BinaryReaderTests: XCTestCase {
 
             override func beginDataSegment(_: Int, _ memoryIndex: Int) {
                 XCTAssertEqual(memoryIndex, 0)
-            }
-
-            override func onDataSegmentData(_: Int, _ data: ArraySlice<UInt8>, _: Int) {
-                let hello = String(decoding: data, as: Unicode.UTF8.self)
-                XCTAssertEqual(hello, "hello")
             }
         }
         let content = """

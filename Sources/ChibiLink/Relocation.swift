@@ -9,7 +9,7 @@ extension GenericInputSection: RelocatableChunk {
     var sectionStart: Offset { offset }
     var parentBinary: InputBinary { binary }
     var relocationRange: Range<Index> {
-        offset ..< offset + size
+        sectionStart ..< sectionStart + size
     }
 }
 
@@ -76,13 +76,25 @@ class Relocator {
         self.globalSection = globalSection
     }
 
-    func relocate<T>(chunk: T) -> [UInt8] where T: RelocatableChunk {
-        let relocOffset = chunk.relocationRange.startIndex - chunk.sectionStart
-        var body = Array(chunk.parentBinary.data[chunk.relocationRange])
-        for reloc in chunk.relocations {
-            apply(relocation: reloc, relocOffset: relocOffset, binary: chunk.parentBinary, bytes: &body)
+    func relocate<T>(chunk: T) -> ArraySlice<UInt8> where T: RelocatableChunk {
+        relocate(
+            chunk: &chunk.parentBinary.data,
+            relocations: chunk.relocations,
+            binary: chunk.parentBinary, in: chunk.relocationRange,
+            sectionOffset: chunk.sectionStart
+        )
+        return chunk.parentBinary.data[chunk.relocationRange]
+    }
+
+    func relocate(
+        chunk: inout [UInt8], relocations: [Relocation], binary: InputBinary,
+        in range: Range<Int>, sectionOffset: Int
+    ) {
+        let offsetFromSection = range.startIndex - sectionOffset
+        for reloc in relocations {
+            apply(relocation: reloc, offsetFromSection: offsetFromSection,
+                  binary: binary, bytes: &chunk, in: range)
         }
-        return body
     }
 
     func functionIndex(for target: IndexableTarget) -> Index {
@@ -186,8 +198,11 @@ class Relocator {
         fatalError()
     }
 
-    func apply(relocation: Relocation, relocOffset: Offset, binary: InputBinary, bytes: inout [UInt8]) {
-        let location = bytes.startIndex - relocOffset + relocation.offset
+    func apply(
+        relocation: Relocation, offsetFromSection: Offset, binary: InputBinary,
+        bytes: inout [UInt8], in range: Range<Int>
+    ) {
+        let location = range.startIndex + relocation.offset - offsetFromSection
         let currentValue: Int
         switch relocation.type.outputType {
         case .ULEB128_32Bit:
@@ -205,24 +220,22 @@ class Relocator {
         }
 
         let value = translate(relocation: relocation, binary: binary, current: currentValue)
-        func writeBytes(_ result: [UInt8]) {
-            for (offset, byte) in result.enumerated() {
-                bytes[location + offset] = byte
-            }
+        func writeByte(offset: Int, value: UInt8) {
+            bytes[location + offset] = value
         }
         switch relocation.type.outputType {
         case .ULEB128_32Bit:
-            writeBytes(encodeULEB128(UInt32(value), padTo: 5))
+            encodeULEB128(UInt32(value), padTo: 5, writer: writeByte)
         case .ULEB128_64Bit:
-            writeBytes(encodeULEB128(UInt64(value), padTo: 10))
+            encodeULEB128(UInt64(value), padTo: 10, writer: writeByte)
         case .SLEB128_32Bit:
-            writeBytes(encodeSLEB128(Int32(value), padTo: 5))
+            encodeSLEB128(Int32(value), padTo: 5, writer: writeByte)
         case .SLEB128_64Bit:
-            writeBytes(encodeSLEB128(Int64(value), padTo: 10))
+            encodeSLEB128(Int64(value), padTo: 10, writer: writeByte)
         case .LE32Bit:
-            writeBytes(encodeLittleEndian(UInt32(value)))
+            encodeLittleEndian(UInt32(value), writer: writeByte)
         case .LE64Bit:
-            writeBytes(encodeLittleEndian(UInt64(value)))
+            encodeLittleEndian(UInt64(value), writer: writeByte)
         }
     }
 }
@@ -268,17 +281,16 @@ private extension RelocType {
     }
 }
 
-func encodeLittleEndian<T>(_ value: T) -> [UInt8]
-    where T: FixedWidthInteger
-{
+func encodeLittleEndian<T>(
+    _ value: T,
+    writer: (_ offset: Int, _ byte: UInt8) -> Void
+) where T: FixedWidthInteger {
     let size = MemoryLayout<T>.size
-    var bytes = [UInt8](repeating: 0, count: size)
     for offset in 0 ..< size {
         let shift = offset * Int(8)
         let mask: T = 0xFF << shift
-        bytes[offset] = UInt8((value & mask) >> shift)
+        writer(offset, UInt8((value & mask) >> shift))
     }
-    return bytes
 }
 
 func decodeLittleEndian<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> T
@@ -289,7 +301,7 @@ func decodeLittleEndian<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> T
     for offset in 0 ..< size {
         let shift = offset * Int(8)
         let byte = bytes[bytes.startIndex + offset]
-        value += T(byte) << shift
+        value += numericCast(byte) << shift
     }
     return value
 }

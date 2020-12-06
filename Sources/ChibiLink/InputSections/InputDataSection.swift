@@ -2,9 +2,8 @@ class DataSegment {
     let index: Index
     let memoryIndex: Index
     var offset: Offset!
-    var size: Size!
     var info: Info!
-    var data: ArraySlice<UInt8>!
+    var dataRange: Range<Int>!
 
     struct Info {
         let name: String
