@@ -12,6 +12,7 @@ jobs:
     - name: Install tools
       run: |
         brew install llvm wabt
+        echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
         cd $(mktemp -d)
         wget https://github.com/cranestation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-macos.tar.xz
         tar xfz wasmtime-dev-x86_64-macos.tar.xz
