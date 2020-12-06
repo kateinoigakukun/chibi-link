@@ -135,7 +135,7 @@ class BinaryReaderTests: XCTestCase {
         try testRead(Delegate(), content)
         class RelocDelegate: NopDelegate {
             var sections: [SectionCode] = []
-            var expectedSections: [SectionCode] = [.elem, .code]
+            var expectedSections: [SectionCode] = [.code]
             override func beginSection(_ section: SectionCode, size _: Size) {
                 sections.append(section)
             }
@@ -146,7 +146,8 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(section, expected)
             }
         }
-        try testRead(RelocDelegate(), options: ["-r"], content)
+        let delegate = RelocDelegate()
+        try testRead(delegate, options: ["-r"], content)
     }
 
     func testSegmentInfo() throws {

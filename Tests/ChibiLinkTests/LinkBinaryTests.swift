@@ -75,13 +75,6 @@ class InputBinaryTests: XCTestCase {
         let actualSections2 = Set(binary2.sections.map(\.sectionCode))
         XCTAssertEqual(actualSections2, expectedSections2)
 
-        let elemSection = try XCTUnwrap(binary2.sections.first(where: { $0.sectionCode == .elem }))
-        XCTAssertEqual(elemSection.relocations.count, 1)
-        let elemFirstReloc = try XCTUnwrap(elemSection.relocations.first)
-        XCTAssertEqual(elemFirstReloc.offset, 6)
-        XCTAssertEqual(elemFirstReloc.type, .functionIndexLEB)
-        XCTAssertEqual(elemFirstReloc.symbolIndex, 0)
-
         let codeSection = try XCTUnwrap(binary2.sections.first(where: { $0.sectionCode == .code }))
         XCTAssertEqual(codeSection.relocations.count, 1)
         let codeFirstReloc = try XCTUnwrap(codeSection.relocations.first)

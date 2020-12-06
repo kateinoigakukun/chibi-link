@@ -454,7 +454,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
             let binding = symFlags & SYMBOL_BINDING_MASK
 
             switch symType {
-            case .function, .global:
+            case .function, .global, .event, .table:
                 let itemIndex = Index(readU32Leb128())
                 var name: String?
                 let isDefined = symFlags & SYMBOL_FLAG_UNDEFINED == 0
@@ -462,10 +462,14 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 if isDefined || isExplicit {
                     name = readString()
                 }
-                if symType == .function {
+                switch symType {
+                case .function:
                     delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
-                } else {
+                case .global:
                     delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
+                case .event, .table:
+                    break // TODO: Support event and table relocations
+                default: fatalError("unreachable")
                 }
             case .data:
                 let name = readString()
