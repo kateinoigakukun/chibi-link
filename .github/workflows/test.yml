@@ -19,10 +19,10 @@ jobs:
     - name: Download Toolchain
       run: |
         VERSION=swift-wasm-5.3.1-RELEASE
-        TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-osx.tar.gz"
+        TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-macos_x86_64.pkg"
         wget $TOOLCHAIN_URL
-        tar xfz $VERSION-osx.tar.gz
-        echo "SWIFT_TOOLCHAIN=$PWD/$VERSION/usr" >> $GITHUB_ENV
+        installer -target CurrentUserHomeDirectory -pkg $VERSION-macos_x86_64.pkg
+        echo "SWIFT_TOOLCHAIN=$HOME/Library/Developer/Toolchains/$VERSION.xctoolchain/usr/" >> $GITHUB_ENV
     - name: Build Fixtures
       run: |
         cd Fixtures
