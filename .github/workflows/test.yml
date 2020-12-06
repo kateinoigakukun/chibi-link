@@ -18,7 +18,7 @@ jobs:
         sudo cp wasmtime-dev-x86_64-macos/wasmtime /usr/local/bin/wasmtime
     - name: Download Toolchain
       run: |
-        VERSION=swift-wasm-5.3-SNAPSHOT-2020-08-10-a
+        VERSION=swift-wasm-5.3.1-RELEASE
         TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-osx.tar.gz"
         wget $TOOLCHAIN_URL
         tar xfz $VERSION-osx.tar.gz
