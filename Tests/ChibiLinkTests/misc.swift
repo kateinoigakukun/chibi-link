@@ -81,7 +81,7 @@ func runWasm(_ input: URL) {
 func createInputBinary(_ url: URL, filename: String? = nil) -> InputBinary {
     let bytes = try! Array(Data(contentsOf: url))
     let filename = filename ?? url.lastPathComponent
-    return InputBinary(filename: filename, data: bytes)
+    return InputBinary(id: Int.random(in: 0..<1000), filename: filename, data: bytes)
 }
 
 class InMemoryOutputByteStream: OutputByteStream {

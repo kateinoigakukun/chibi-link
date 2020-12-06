@@ -5,26 +5,26 @@ class OutputElementSection: OutputVectorSection {
     let elementCount: Int
     private let sections: [InputElementSection]
     private let funcSection: OutputFunctionSection
-    private let indexOffsetByFileName: [String: Offset]
+    private let indexOffsetByFileID: [InputBinary.ID: Offset]
 
     init(sections: [InputSection], funcSection: OutputFunctionSection) {
         var totalElemCount = 0
-        var indexOffsets: [String: Offset] = [:]
+        var indexOffsets: [InputBinary.ID: Offset] = [:]
         var elemSections: [InputElementSection] = []
         for section in sections {
             guard case let .element(section) = section else { preconditionFailure() }
-            indexOffsets[section.binary.filename] = totalElemCount
+            indexOffsets[section.binary.id] = totalElemCount
             totalElemCount += section.content.elements.reduce(0) { $0 + $1.elementCount }
             elemSections.append(section)
         }
         elementCount = totalElemCount
         self.sections = elemSections
         self.funcSection = funcSection
-        indexOffsetByFileName = indexOffsets
+        indexOffsetByFileID = indexOffsets
     }
 
     func indexOffset(for binary: InputBinary) -> Offset? {
-        return indexOffsetByFileName[binary.filename]
+        return indexOffsetByFileID[binary.id]
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {

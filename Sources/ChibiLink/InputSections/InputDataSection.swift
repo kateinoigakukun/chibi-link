@@ -1,4 +1,5 @@
 class DataSegment {
+    let index: Index
     let memoryIndex: Index
     var offset: Offset!
     var size: Size!
@@ -11,7 +12,8 @@ class DataSegment {
         let flags: UInt32
     }
 
-    internal init(memoryIndex: Index) {
+    internal init(index: Index, memoryIndex: Index) {
+        self.index = index
         self.memoryIndex = memoryIndex
     }
 }

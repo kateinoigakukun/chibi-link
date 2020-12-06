@@ -3,7 +3,7 @@ public func performLinker(_ filenames: [String], outputStream: OutputByteStream,
     var inputs: [InputBinary] = []
     for filename in filenames {
         let bytes = try readFileContents(filename)
-        let binary = InputBinary(filename: filename, data: bytes)
+        let binary = InputBinary(id: inputs.count, filename: filename, data: bytes)
         let collector = LinkInfoCollector(binary: binary, symbolTable: symtab)
         let reader = BinaryReader(bytes: bytes, delegate: collector)
         try reader.readModule()

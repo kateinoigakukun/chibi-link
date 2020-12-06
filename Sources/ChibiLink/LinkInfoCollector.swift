@@ -86,7 +86,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func beginDataSegment(_: Index, _ memoryIndex: Index) {
         guard case let .data(sec) = currentSection else { preconditionFailure() }
-        let segment = DataSegment(memoryIndex: memoryIndex)
+        let segment = DataSegment(index: sec.content.elements.count, memoryIndex: memoryIndex)
         sec.content.elements.append(segment)
     }
 

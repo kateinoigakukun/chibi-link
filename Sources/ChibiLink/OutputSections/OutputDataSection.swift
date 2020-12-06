@@ -43,16 +43,16 @@ class OutputDataSection: OutputVectorSection {
     )
     let segments: [LocatedSegment]
     let initialMemorySize: Size
-    private let outputOffsetByInputSegName: [OffsetKey: Offset]
+    private let outputOffsetByInputSegment: [OffsetKey: Offset]
     
     private struct OffsetKey: Hashable {
-        let filename: String
-        let name: String
+        let fileID: InputBinary.ID
+        let segmentIndex: Index
     }
 
     func startVirtualAddress(for segment: DataSegment, binary: InputBinary) -> Offset? {
-        let key = OffsetKey(filename: binary.filename, name: segment.info.name)
-        return outputOffsetByInputSegName[key]
+        let key = OffsetKey(fileID: binary.id, segmentIndex: segment.index)
+        return outputOffsetByInputSegment[key]
     }
 
     init(sections: [InputSection]) {
@@ -100,14 +100,14 @@ class OutputDataSection: OutputVectorSection {
             segments.append((segment, memoryOffset))
 
             for chunk in segment.chunks {
-                let key = OffsetKey(filename: chunk.parentBinary.filename, name: chunk.segment.info.name)
+                let key = OffsetKey(fileID: chunk.parentBinary.id, segmentIndex: chunk.segment.index)
                 assert(outputOffsetByInputSegName[key] == nil)
                 outputOffsetByInputSegName[key] = memoryOffset + chunk.offset
             }
             memoryOffset += segment.size
         }
         self.segments = segments
-        self.outputOffsetByInputSegName = outputOffsetByInputSegName
+        self.outputOffsetByInputSegment = outputOffsetByInputSegName
         initialMemorySize = memoryOffset
     }
 

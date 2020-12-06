@@ -4,30 +4,30 @@ class OutputGlobalSection: OutputVectorSection {
     var size: OutputSectionSize { .unknown }
     let count: Int
     let sections: [InputVectorSection]
-    private let indexOffsetByFileName: [String: Offset]
+    private let indexOffsetByFileID: [InputBinary.ID: Offset]
 
     init(sections: [InputSection], importSection: OutputImportSeciton, symbolTable: SymbolTable) {
         let synthesizedCount = symbolTable.synthesizedGlobals().count
         var totalCount = synthesizedCount
-        var indexOffsets: [String: Offset] = [:]
+        var indexOffsets: [InputBinary.ID: Offset] = [:]
         let offset = importSection.globalCount
         var vectorSections: [InputVectorSection] = []
 
         for section in sections {
             guard case let .rawVector(code, section) = section,
                   code == .global else { preconditionFailure() }
-            indexOffsets[section.binary.filename] = totalCount + offset
+            indexOffsets[section.binary.id] = totalCount + offset
             totalCount += section.content.count
             vectorSections.append(section)
         }
 
         self.sections = vectorSections
         count = totalCount
-        indexOffsetByFileName = indexOffsets
+        indexOffsetByFileID = indexOffsets
     }
 
     func indexOffset(for binary: InputBinary) -> Offset? {
-        return indexOffsetByFileName[binary.filename]
+        return indexOffsetByFileID[binary.id]
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {

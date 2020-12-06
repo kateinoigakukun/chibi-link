@@ -45,6 +45,8 @@ struct InitFunction {
 }
 
 class InputBinary {
+    typealias ID = Int
+    let id: ID
     let filename: String
     let data: [UInt8]
 
@@ -57,7 +59,8 @@ class InputBinary {
     var symbols: [Symbol] = []
     var initFunctions: [InitFunction] = []
 
-    init(filename: String, data: [UInt8]) {
+    init(id: ID, filename: String, data: [UInt8]) {
+        self.id = id
         self.filename = filename
         self.data = data
     }
