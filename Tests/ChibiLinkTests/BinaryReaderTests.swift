@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 class NopDelegate: BinaryReaderDelegate {
     var state: BinaryReaderState!
@@ -25,13 +26,17 @@ class NopDelegate: BinaryReaderDelegate {
 
     func onGlobalSymbol(_: Index, _: UInt32, _: String?, _: Index) {}
 
-    func onDataSymbol(_: Index, _: UInt32, _: String, _: (segmentIndex: Index, offset: Offset, size: Size)?) {}
+    func onDataSymbol(
+        _: Index, _: UInt32, _: String, _: (segmentIndex: Index, offset: Offset, size: Size)?
+    ) {}
 
     func onSegmentInfo(_: Index, _: String, _: Int, _: UInt32) {}
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {}
 }
 
-func testRead<D: BinaryReaderDelegate>(_ delegate: D, options: [String] = [], _ content: String) throws {
+func testRead<D: BinaryReaderDelegate>(_ delegate: D, options: [String] = [], _ content: String)
+    throws
+{
     let output = compileWat(content, options: options)
     let bytes = try Array(Data(contentsOf: output))
     let reader = BinaryReader(bytes: bytes, delegate: delegate)
@@ -54,7 +59,9 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(count, 1)
             }
 
-            override func onExport(_ exportIndex: Int, _: ExternalKind, _ itemIndex: Int, _ name: String) {
+            override func onExport(
+                _ exportIndex: Int, _: ExternalKind, _ itemIndex: Int, _ name: String
+            ) {
                 XCTAssertEqual(exportIndex, 0)
                 XCTAssertEqual(itemIndex, 0)
                 XCTAssertEqual(name, "main")
@@ -102,7 +109,8 @@ class BinaryReaderTests: XCTestCase {
                 XCTAssertEqual(value, 0)
             }
 
-            override func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int) {
+            override func onElementSegmentFunctionIndexCount(_ segmentIndex: Int, _ indexCount: Int)
+            {
                 XCTAssertEqual(segmentIndex, 0)
                 XCTAssertEqual(indexCount, 1)
             }
@@ -112,18 +120,18 @@ class BinaryReaderTests: XCTestCase {
             }
         }
         let content = """
-        (module
-          (import "foo" "bar" (func (result i32)))
+            (module
+              (import "foo" "bar" (func (result i32)))
 
-          (global i32 (i32.const 1))
+              (global i32 (i32.const 1))
 
-          (table anyfunc (elem 0))
+              (table anyfunc (elem 0))
 
-          (memory (data "hello"))
-          (func (result i32)
-            (i32.add (call 0) (i32.load8_s (i32.const 1)))))
+              (memory (data "hello"))
+              (func (result i32)
+                (i32.add (call 0) (i32.load8_s (i32.const 1)))))
 
-        """
+            """
         try testRead(Delegate(), content)
         class RelocDelegate: NopDelegate {
             var sections: [SectionCode] = []
@@ -147,19 +155,21 @@ class BinaryReaderTests: XCTestCase {
                 index: Index, name: String, alignment: Int, flags: UInt32
             )
             var infoList: [Info] = []
-            override func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {
+            override func onSegmentInfo(
+                _ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32
+            ) {
                 infoList.append((index, name, alignment, flags))
             }
         }
         let content = """
-        target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-        target triple = "wasm32-unknown-unknown"
+            target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+            target triple = "wasm32-unknown-unknown"
 
-        @bss = hidden global i32 zeroinitializer, align 4
-        @foo = hidden global i32 zeroinitializer, section "WowZero!", align 4
-        @bar = hidden constant i32 42, section "MyAwesomeSection", align 4
-        @baz = hidden global i32 7, section "AnotherGreatSection", align 4
-        """
+            @bss = hidden global i32 zeroinitializer, align 4
+            @foo = hidden global i32 zeroinitializer, section "WowZero!", align 4
+            @bar = hidden constant i32 42, section "MyAwesomeSection", align 4
+            @baz = hidden global i32 7, section "AnotherGreatSection", align 4
+            """
 
         let output = compileLLVMIR(content)
         let bytes = try Array(Data(contentsOf: output))

@@ -1,6 +1,6 @@
 func debug(_ message: @autoclosure () -> String) {
     #if DEBUG
-    print("Debug: \(message())")
+        print("Debug: \(message())")
     #endif
 }
 

@@ -67,7 +67,7 @@ enum RelocType: UInt8, Equatable {
     case globalIndexLEB = 7
     case functionOffsetI32 = 8
     case sectionOffsetI32 = 9
-//    case eventIndexLeb = 10
+    //    case eventIndexLeb = 10
     case memoryAddressRelSLEB = 11
     case tableIndexRelSLEB = 12
     case globalIndexI32 = 13

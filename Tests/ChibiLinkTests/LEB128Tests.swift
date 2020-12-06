@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 class LEB128Tests: XCTestCase {
     func testDecodeULEB128() {
@@ -7,7 +8,8 @@ class LEB128Tests: XCTestCase {
             _ expected: T, _ value: [UInt8],
             file: StaticString = #filePath, line: UInt = #line
         ) where T: UnsignedInteger, T: FixedWidthInteger {
-            XCTAssertEqual(decodeULEB128(value[...], T.self).value, expected, file: file, line: line)
+            XCTAssertEqual(
+                decodeULEB128(value[...], T.self).value, expected, file: file, line: line)
         }
         EXPECT_DECODE_ULEB128_EQ(0 as UInt32, [0x00])
         EXPECT_DECODE_ULEB128_EQ(1 as UInt32, [0x01])
@@ -34,7 +36,8 @@ class LEB128Tests: XCTestCase {
             _ expected: T, _ value: [UInt8],
             file: StaticString = #filePath, line: UInt = #line
         ) where T: SignedInteger, T: FixedWidthInteger {
-            XCTAssertEqual(decodeSLEB128(value[...], T.self).value, expected, file: file, line: line)
+            XCTAssertEqual(
+                decodeSLEB128(value[...], T.self).value, expected, file: file, line: line)
         }
         EXPECT_DECODE_SLEB128_EQ(0, [0x00])
         EXPECT_DECODE_SLEB128_EQ(1, [0x01])

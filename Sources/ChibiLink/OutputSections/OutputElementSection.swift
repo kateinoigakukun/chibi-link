@@ -28,9 +28,9 @@ class OutputElementSection: OutputVectorSection {
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
-        try writer.writeULEB128(UInt32(0)) // table index
+        try writer.writeULEB128(UInt32(0))  // table index
         // For non-PIC, we start at 1 so that accessing table index 0 always traps.
-        try writer.writeI32InitExpr(.i32(1)) // offset
+        try writer.writeI32InitExpr(.i32(1))  // offset
         try writer.writeULEB128(UInt32(elementCount))
         // Read + Write + Relocate func indexes
         for section in sections {
@@ -38,7 +38,7 @@ class OutputElementSection: OutputVectorSection {
             let offsetBase = funcSection.indexOffset(for: binary)! - binary.funcImports.count
             for segment in section.content.elements {
                 var readOffset = segment.offset
-                for _ in 0 ..< segment.elementCount {
+                for _ in 0..<segment.elementCount {
                     let payload = section.binary.data[readOffset...]
                     let (funcIndex, length) = decodeULEB128(payload, UInt32.self)
                     readOffset += length

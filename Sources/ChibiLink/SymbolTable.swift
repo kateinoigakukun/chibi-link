@@ -84,10 +84,12 @@ final class FunctionSymbol: SymbolProtocol {
 }
 
 extension FunctionSymbol.Synthesized {
-    func writeCtorsCallerCode(writer: BinaryWriter, inits: [InitFunction], relocator: Relocator) throws {
+    func writeCtorsCallerCode(writer: BinaryWriter, inits: [InitFunction], relocator: Relocator)
+        throws
+    {
         let placeholder = try writer.writeSizePlaceholder()
         let codeStart = writer.offset
-        try writer.writeULEB128(UInt32(0)) // num locals
+        try writer.writeULEB128(UInt32(0))  // num locals
         for initFn in inits {
             try writer.writeFixedUInt8(Opcode.call.rawValue)
             guard case let .function(symbol) = initFn.binary.symbols[initFn.symbolIndex] else {
@@ -109,14 +111,14 @@ extension FunctionSymbol.Synthesized {
         switch self {
         case .ctorsCaller:
             try writer.writeFixedUInt8(FUNC_TYPE_CODE)
-            try writer.writeULEB128(UInt32(0)) // params
-            try writer.writeULEB128(UInt32(0)) // returns
+            try writer.writeULEB128(UInt32(0))  // params
+            try writer.writeULEB128(UInt32(0))  // returns
         case .weakUndefStub:
             // reuse signature
             break
         }
     }
-    
+
     var reuseSignatureIndex: (InputBinary, Index)? {
         switch self {
         case .ctorsCaller: return nil
@@ -130,10 +132,10 @@ extension FunctionSymbol.Synthesized {
             try writeCtorsCallerCode(writer: writer, inits: inits, relocator: relocator)
         case .weakUndefStub:
             let unreachableFn: [UInt8] = [
-                0x03, // ULEB:   length
-                0x00, // ULEB:   num locals
-                0x00, // Opcode: unreachable
-                0x0b, // Opcode: end
+                0x03,  // ULEB:   length
+                0x00,  // ULEB:   num locals
+                0x00,  // Opcode: unreachable
+                0x0b,  // Opcode: end
             ]
             try writer.writeBytes(unreachableFn[...])
         }
@@ -173,7 +175,7 @@ final class DataSymbol: SymbolProtocol {
         let name: String
         let module: String = "env"
     }
-    
+
     struct Synthesized: SynthesizedTarget {
         let name: String
         let context: String
@@ -285,9 +287,10 @@ class SymbolTable {
         return symbolMap[name.hashValue]
     }
 
-    func addFunctionSymbol(_ target: FunctionSymbol.Target,
-                           flags: SymbolFlags) -> FunctionSymbol
-    {
+    func addFunctionSymbol(
+        _ target: FunctionSymbol.Target,
+        flags: SymbolFlags
+    ) -> FunctionSymbol {
         let targetName: StringHash = target.name.hashValue
         func indexSynthesizedFn() {
             guard case let .synthesized(target) = target else { return }
@@ -301,10 +304,11 @@ class SymbolTable {
             return newSymbol
         }
         guard case let .function(existingFn) = existing else {
-            fatalError("""
-                Error: symbol type mismatch: \(existing.name)
-                expected to be function but defined as \(existing)
-            """)
+            fatalError(
+                """
+                    Error: symbol type mismatch: \(existing.name)
+                    expected to be function but defined as \(existing)
+                """)
         }
         // TODO: Handle flags
         switch (existingFn.target, target) {
@@ -313,16 +317,16 @@ class SymbolTable {
             indexSynthesizedFn()
             return existingFn
         case (.undefined, .undefined), (.defined, .undefined),
-             (.synthesized, .undefined),
-             (.defined, .defined) where flags.isWeak,
-             (.synthesized, .synthesized) where flags.isWeak,
-             (.defined, .synthesized) where flags.isWeak,
-             (.synthesized, .defined) where flags.isWeak:
+            (.synthesized, .undefined),
+            (.defined, .defined) where flags.isWeak,
+            (.synthesized, .synthesized) where flags.isWeak,
+            (.defined, .synthesized) where flags.isWeak,
+            (.synthesized, .defined) where flags.isWeak:
             return existingFn
         case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+            let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+            let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
             reportSymbolConflict(
                 name: existing.name,
                 oldContext: existing.context, newContext: newTarget.context
@@ -330,9 +334,10 @@ class SymbolTable {
         }
     }
 
-    func addGlobalSymbol(_ target: GlobalSymbol.Target,
-                         flags: SymbolFlags) -> GlobalSymbol
-    {
+    func addGlobalSymbol(
+        _ target: GlobalSymbol.Target,
+        flags: SymbolFlags
+    ) -> GlobalSymbol {
         let targetName: StringHash = target.name.hashValue
         func indexSynthesizedGlobal() {
             guard case let .synthesized(target) = target else { return }
@@ -347,10 +352,11 @@ class SymbolTable {
         }
 
         guard case let .global(existingGlobal) = existing else {
-            fatalError("""
-                Error: symbol type mismatch: \(existing.name)
-                expected to be function but defined as \(existing)
-            """)
+            fatalError(
+                """
+                    Error: symbol type mismatch: \(existing.name)
+                    expected to be function but defined as \(existing)
+                """)
         }
         switch (existingGlobal.target, target) {
         case (.undefined, .defined), (.undefined, .synthesized):
@@ -358,16 +364,16 @@ class SymbolTable {
             indexSynthesizedGlobal()
             return existingGlobal
         case (.undefined, .undefined), (.defined, .undefined),
-             (.synthesized, .undefined),
-             (.defined, .defined) where flags.isWeak,
-             (.synthesized, .synthesized) where flags.isWeak,
-             (.defined, .synthesized) where flags.isWeak,
-             (.synthesized, .defined) where flags.isWeak:
+            (.synthesized, .undefined),
+            (.defined, .defined) where flags.isWeak,
+            (.synthesized, .synthesized) where flags.isWeak,
+            (.defined, .synthesized) where flags.isWeak,
+            (.synthesized, .defined) where flags.isWeak:
             return existingGlobal
         case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+            let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+            let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
             reportSymbolConflict(
                 name: existing.name,
                 oldContext: existing.context, newContext: newTarget.context
@@ -375,9 +381,10 @@ class SymbolTable {
         }
     }
 
-    func addDataSymbol(_ target: DataSymbol.Target,
-                       flags: SymbolFlags) -> DataSymbol
-    {
+    func addDataSymbol(
+        _ target: DataSymbol.Target,
+        flags: SymbolFlags
+    ) -> DataSymbol {
         let targetName: StringHash = target.name.hashValue
         func indexSynthesizedData() {
             guard case let .synthesized(target) = target else { return }
@@ -391,10 +398,11 @@ class SymbolTable {
         }
 
         guard case let .data(existingData) = existing else {
-            fatalError("""
-                Error: symbol type mismatch: \(existing.name)
-                expected to be function but defined as \(existing)
-            """)
+            fatalError(
+                """
+                    Error: symbol type mismatch: \(existing.name)
+                    expected to be function but defined as \(existing)
+                """)
         }
         switch (existingData.target, target) {
         case (.undefined, .defined), (.undefined, .synthesized):
@@ -402,16 +410,16 @@ class SymbolTable {
             indexSynthesizedData()
             return existingData
         case (.undefined, .undefined), (.defined, .undefined),
-             (.synthesized, .undefined),
-             (.defined, .defined) where flags.isWeak,
-             (.synthesized, .synthesized) where flags.isWeak,
-             (.defined, .synthesized) where flags.isWeak,
-             (.synthesized, .defined) where flags.isWeak:
+            (.synthesized, .undefined),
+            (.defined, .defined) where flags.isWeak,
+            (.synthesized, .synthesized) where flags.isWeak,
+            (.defined, .synthesized) where flags.isWeak,
+            (.synthesized, .defined) where flags.isWeak:
             return existingData
         case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
-             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
-             let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+            let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+            let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
             reportSymbolConflict(
                 name: existing.name,
                 oldContext: existing.context, newContext: newTarget.context
@@ -421,9 +429,10 @@ class SymbolTable {
 }
 
 private func reportSymbolConflict(name: String, oldContext: String, newContext: String) -> Never {
-    fatalError("""
-        Error: symbol conflict: \(name)
-        >>> defined in \(oldContext)
-        >>> defined in \(newContext)
-    """)
+    fatalError(
+        """
+            Error: symbol conflict: \(name)
+            >>> defined in \(oldContext)
+            >>> defined in \(newContext)
+        """)
 }

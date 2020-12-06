@@ -76,7 +76,9 @@ private func uniqueImportKey(module: String, field: String) -> String {
     module + "." + field
 }
 
-private func createImport<S>(_ symbol: S, typeSection: OutputTypeSection) -> OutputImportSeciton.Import? where S: SymbolProtocol {
+private func createImport<S>(_ symbol: S, typeSection: OutputTypeSection) -> OutputImportSeciton
+    .Import? where S: SymbolProtocol
+{
     typealias Import = OutputImportSeciton.Import
     guard !symbol.flags.isWeak else { return nil }
     switch symbol.target {

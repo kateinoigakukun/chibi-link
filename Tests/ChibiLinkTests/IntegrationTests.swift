@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 class IntegrationTests: XCTestCase {
     func testLinkSwiftStdlib() throws {

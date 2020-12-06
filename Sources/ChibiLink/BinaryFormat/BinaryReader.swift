@@ -18,8 +18,9 @@ protocol BinaryReaderDelegate {
     func onFunctionCount(_ count: Int)
 
     func onMemory(_ memoryIndex: Index, _ pageLimits: Limits)
-    func onExport(_ exportIndex: Index, _ kind: ExternalKind,
-                  _ itemIndex: Index, _ name: String)
+    func onExport(
+        _ exportIndex: Index, _ kind: ExternalKind,
+        _ itemIndex: Index, _ name: String)
     func onElementSegmentFunctionIndexCount(_ segmentIndex: Index, _ indexCount: Int)
 
     func beginDataSegment(_ segmentIndex: Index, _ memoryIndex: Index)
@@ -30,8 +31,9 @@ protocol BinaryReaderDelegate {
 
     func onRelocCount(_ relocsCount: Int, _ sectionIndex: Index)
 
-    func onReloc(_ type: RelocType, _ offset: Offset,
-                 _ index: Index, _ addend: Int32)
+    func onReloc(
+        _ type: RelocType, _ offset: Offset,
+        _ index: Index, _ addend: Int32)
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
 
@@ -41,11 +43,11 @@ protocol BinaryReaderDelegate {
         _ index: Index, _ flags: UInt32, _ name: String,
         _ content: (segmentIndex: Index, offset: Offset, size: Size)?
     )
-    func onSegmentInfo(_ index: Index, _ name: String,
-                       _ alignment: Int, _ flags: UInt32)
+    func onSegmentInfo(
+        _ index: Index, _ name: String,
+        _ alignment: Int, _ flags: UInt32)
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32)
 }
-
 
 class BinaryReaderState {
     fileprivate(set) var offset: Offset = 0
@@ -90,7 +92,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     @discardableResult
     func read(_ length: Int) -> ArraySlice<UInt8> {
-        let result = state.bytes[state.offset ..< state.offset + length]
+        let result = state.bytes[state.offset..<state.offset + length]
         state.offset += length
         return result
     }
@@ -115,7 +117,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readString() -> String {
         let length = Int(readU32Leb128())
-        let bytes = state.bytes[state.offset ..< state.offset + length]
+        let bytes = state.bytes[state.offset..<state.offset + length]
         let name = String(decoding: bytes, as: Unicode.UTF8.self)
         state.offset += length
         return name
@@ -180,7 +182,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readBytes() -> (data: ArraySlice<UInt8>, size: Size) {
         let size = Size(readU32Leb128())
-        let data = state.bytes[state.offset ..< state.offset + size]
+        let data = state.bytes[state.offset..<state.offset + size]
         state.offset += size
         return (data, size)
     }
@@ -242,7 +244,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readImportSection(sectionSize _: Size) throws {
         let importCount = Int(readU32Leb128())
-        for importIdx in 0 ..< importCount {
+        for importIdx in 0..<importCount {
             let module = readString()
             let field = readString()
             let rawKind = readU8Fixed()
@@ -286,7 +288,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
     func readTableSection(sectionSize _: Size) throws {
         let tablesCount = Int(readU32Leb128())
         assert(tablesCount <= 1)
-        for _ in 0 ..< tablesCount {
+        for _ in 0..<tablesCount {
             _ = try readTable()
         }
     }
@@ -294,7 +296,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
     func readMemorySection(sectionSize _: Size) throws {
         let memoriesCount = Int(readU32Leb128())
         assert(memoriesCount <= 1)
-        for i in 0 ..< memoriesCount {
+        for i in 0..<memoriesCount {
             let memoryIdx: Index = memoryImportCount + i
             let limits = try readMemory()
             delegate.onMemory(memoryIdx, limits)
@@ -303,7 +305,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readExportSection(sectionSize _: Size) throws {
         let exportsCount = Int(readU32Leb128())
-        for i in 0 ..< exportsCount {
+        for i in 0..<exportsCount {
             let name = readString()
             let rawKind = readU8Fixed()
             guard let kind = ExternalKind(rawValue: rawKind) else {
@@ -316,13 +318,13 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readElementSection(sectionSize _: Size) throws {
         let segmentsCount = Int(readU32Leb128())
-        for i in 0 ..< segmentsCount {
-            _ = readIndex() // tableIndex
+        for i in 0..<segmentsCount {
+            _ = readIndex()  // tableIndex
             try readI32InitExpr(segmentIndex: i)
             let funcIndicesCount = Int(readU32Leb128())
             delegate.onElementSegmentFunctionIndexCount(i, funcIndicesCount)
-            for _ in 0 ..< funcIndicesCount {
-                _ = readIndex() // funcIdx
+            for _ in 0..<funcIndicesCount {
+                _ = readIndex()  // funcIdx
             }
         }
     }
@@ -331,14 +333,14 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
         // BeginDataSection
         let segmentsCount = Int(readU32Leb128())
         // OnDataSegmentCount
-        for i in 0 ..< segmentsCount {
+        for i in 0..<segmentsCount {
             let memoryIndex = readIndex()
             delegate.beginDataSegment(i, memoryIndex)
             // BeginDataSegmentInitExpr
             try readI32InitExpr(segmentIndex: i)
             // EndDataSegmentInitExpr
             let size = Size(readU32Leb128())
-            let range = state.offset ..< state.offset + size
+            let range = state.offset..<state.offset + size
             state.offset += size
             delegate.onDataSegmentData(i, range)
             // EndDataSegment
@@ -354,7 +356,8 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
             try readNameSection(sectionSize: sectionSize)
         case "linking":
             try readLinkingSection(sectionSize: sectionSize)
-        case _ where sectionName.hasPrefix("reloc.")
+        case _
+        where sectionName.hasPrefix("reloc.")
             && !sectionName.hasPrefix("reloc..debug_"):
             try readRelocSection(sectionSize: sectionSize)
         default:
@@ -374,7 +377,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
             case .function:
                 // OnFunctionNameSubsection
                 let namesCount = readU32Leb128()
-                for _ in 0 ..< namesCount {
+                for _ in 0..<namesCount {
                     let funcIdx = readIndex()
                     let funcName = readString()
                     delegate.onFunctionName(funcIdx, funcName)
@@ -391,7 +394,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
         let relocsCount = Int(readU32Leb128())
         delegate.onRelocCount(relocsCount, sectionIndex)
 
-        for _ in 0 ..< relocsCount {
+        for _ in 0..<relocsCount {
             let rawType = readU8Fixed()
             guard let type = RelocType(rawValue: rawType) else {
                 throw Error.invalidRelocType(rawType)
@@ -401,8 +404,8 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
             let addend: Int32
             switch type {
             case .memoryAddressLEB,
-                 .memoryAddressSLEB,
-                 .memoryAddressI32:
+                .memoryAddressSLEB,
+                .memoryAddressI32:
                 addend = readS32Leb128()
             default:
                 addend = 0
@@ -430,9 +433,12 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 readInitFunctions()
             default:
                 if let linkingType = linkingType {
-                    warning("Linking subsection '\(String(describing: linkingType))' is not supported now")
+                    warning(
+                        "Linking subsection '\(String(describing: linkingType))' is not supported now"
+                    )
                 } else {
-                    warning("Linking subsection unknown code '\(linkingTypeCode)' is not supported now")
+                    warning(
+                        "Linking subsection unknown code '\(linkingTypeCode)' is not supported now")
                 }
                 state.offset = subSectionEnd
             }
@@ -441,7 +447,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
     func readSymbolTable() {
         let count = Int(readU32Leb128())
-        for i in 0 ..< count {
+        for i in 0..<count {
             let symTypeCode = readU8Fixed()
             let symFlags = readU32Leb128()
             let symType = SymbolType(rawValue: symTypeCode)!
@@ -474,24 +480,24 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 delegate.onDataSymbol(i, symFlags, name, content)
             case .section:
                 assert(binding == SYMBOL_BINDING_LOCAL)
-                _ = readU32Leb128() // section index
+                _ = readU32Leb128()  // section index
             }
         }
     }
 
     func readSegmentInfo() {
         let count = Int(readU32Leb128())
-        for i in 0 ..< count {
+        for i in 0..<count {
             let name = readString()
             let alignment = readU32Leb128()
             let flags = readU32Leb128()
             delegate.onSegmentInfo(i, name, Int(alignment), flags)
         }
     }
-    
+
     func readInitFunctions() {
         let count = Int(readU32Leb128())
-        for _ in 0 ..< count {
+        for _ in 0..<count {
             let priority = readU32Leb128()
             let symbolIndex = readIndex()
             delegate.onInitFunction(symbolIndex, priority)

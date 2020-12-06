@@ -1,4 +1,3 @@
-
 class OutputTableSection: OutputVectorSection {
     var count: Int = 1
     var section: SectionCode { .table }

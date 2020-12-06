@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 func testCollect(_ content: String, options: [String] = []) throws -> (InputBinary, URL) {
     let module = compileWat(content, options: options)
@@ -13,9 +14,10 @@ func testCollect(_ content: String, options: [String] = []) throws -> (InputBina
 
 class InputBinaryTests: XCTestCase {
     func testEmpty() throws {
-        _ = try testCollect("""
-        (module)
-        """)
+        _ = try testCollect(
+            """
+            (module)
+            """)
     }
 
     func testBasic1() throws {

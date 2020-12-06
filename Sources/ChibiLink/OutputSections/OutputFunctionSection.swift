@@ -6,17 +6,19 @@ class OutputFunctionSection: OutputVectorSection {
     private let typeSection: OutputTypeSection
     private let indexOffsetByFileID: [InputBinary.ID: Offset]
 
-    init(sections: [InputSection],
-         typeSection: OutputTypeSection,
-         importSection: OutputImportSeciton,
-         symbolTable: SymbolTable
+    init(
+        sections: [InputSection],
+        typeSection: OutputTypeSection,
+        importSection: OutputImportSeciton,
+        symbolTable: SymbolTable
     ) {
         var totalCount = symbolTable.synthesizedFuncs().count
         var indexOffsets: [InputBinary.ID: Offset] = [:]
         var vectorSections: [InputVectorSection] = []
         for section in sections {
             guard case let .rawVector(code, section) = section,
-                  code == .function else { preconditionFailure() }
+                code == .function
+            else { preconditionFailure() }
             indexOffsets[section.binary.id] = totalCount + importSection.functionCount
             totalCount += section.content.count
             vectorSections.append(section)
@@ -50,8 +52,8 @@ class OutputFunctionSection: OutputVectorSection {
             let payloadEnd = payloadStart + payloadSize
             var readOffset = payloadStart
             let typeIndexOffset = typeSection.indexOffset(for: section.binary)!
-            for _ in 0 ..< section.content.count {
-                let payload = section.binary.data[readOffset ..< payloadEnd]
+            for _ in 0..<section.content.count {
+                let payload = section.binary.data[readOffset..<payloadEnd]
                 let (typeIndex, length) = decodeULEB128(payload, UInt32.self)
                 readOffset += length
                 try writer.writeIndex(Index(typeIndex) + typeIndexOffset)

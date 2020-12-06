@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 @discardableResult
 func testSections(_ contents: [String: Input]) throws -> [SectionCode: OutputSection] {
@@ -46,25 +47,27 @@ func testSections(_ contents: [String: Input]) throws -> [SectionCode: OutputSec
 class OutputSectionsTests: XCTestCase {
     func testDataSection() throws {
         let sections = try testSections([
-            "foo.ll": .llvm("""
-            target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-            target triple = "wasm32-unknown-unknown"
+            "foo.ll": .llvm(
+                """
+                target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+                target triple = "wasm32-unknown-unknown"
 
-            @hello_str = hidden global [12 x i8] c"hello world\\00"
-            @bye_str   = hidden global [9 x i8] c"good bye\\00"
-            """),
-            "user.ll": .llvm("""
-            target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
-            target triple = "wasm32-unknown-unknown"
+                @hello_str = hidden global [12 x i8] c"hello world\\00"
+                @bye_str   = hidden global [9 x i8] c"good bye\\00"
+                """),
+            "user.ll": .llvm(
+                """
+                target datalayout = "e-m:e-p:32:32-i64:64-n32:64-S128"
+                target triple = "wasm32-unknown-unknown"
 
-            @foo = hidden global i32 1, align 4
-            @aligned_bar = hidden global i32 3, align 16
+                @foo = hidden global i32 1, align 4
+                @aligned_bar = hidden global i32 3, align 16
 
-            @hello_str = external global i8*
-            @external_ref1 = global i8** @hello_str, align 8
-            @bye_str = external global i8*
-            @external_ref2 = global i8** @bye_str, section "another_sec", align 4
-            """),
+                @hello_str = external global i8*
+                @external_ref1 = global i8** @hello_str, align 8
+                @bye_str = external global i8*
+                @external_ref2 = global i8** @bye_str, section "another_sec", align 4
+                """),
         ])
         let outSection = sections[.data]! as! OutputDataSection
         XCTAssertEqual(outSection.count, 2)
@@ -83,28 +86,29 @@ class OutputSectionsTests: XCTestCase {
 
     func testElementSection() throws {
         let sections = try testSections([
-            "main.ll": .llvm("""
-            target triple = "wasm32-unknown-unknown"
+            "main.ll": .llvm(
+                """
+                target triple = "wasm32-unknown-unknown"
 
-            @indirect_func = local_unnamed_addr global i32 ()* @foo, align 4
+                @indirect_func = local_unnamed_addr global i32 ()* @foo, align 4
 
-            define i32 @foo() #0 {
-            entry:
-              ret i32 2
-            }
+                define i32 @foo() #0 {
+                entry:
+                  ret i32 2
+                }
 
-            define void @_start() local_unnamed_addr #1 {
-            entry:
-              %0 = load i32 ()*, i32 ()** @indirect_func, align 4
-              %call = call i32 %0() #2
-              ret void
-            }
+                define void @_start() local_unnamed_addr #1 {
+                entry:
+                  %0 = load i32 ()*, i32 ()** @indirect_func, align 4
+                  %call = call i32 %0() #2
+                  ret void
+                }
 
-            define void @call_ptr(i64 (i64)* %arg) {
-              %1 = call i64 %arg(i64 1)
-              ret void
-            }
-            """),
+                define void @call_ptr(i64 (i64)* %arg) {
+                  %1 = call i64 %arg(i64 1)
+                  ret void
+                }
+                """)
         ])
         let outSection = sections[.elem]! as! OutputElementSection
         XCTAssertEqual(outSection.elementCount, 1)

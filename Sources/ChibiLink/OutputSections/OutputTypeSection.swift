@@ -19,7 +19,8 @@ class OutputTypeSection: OutputVectorSection {
         var typeSections: [InputVectorSection] = []
         for section in sections {
             guard case let .rawVector(code, section) = section,
-                  code == .type else { preconditionFailure() }
+                code == .type
+            else { preconditionFailure() }
             indexOffsets[section.binary.id] = totalCount
             totalCount += section.content.count
             typeSections.append(section)
@@ -36,7 +37,7 @@ class OutputTypeSection: OutputVectorSection {
         }
         for section in sections {
             let offset = section.content.payloadOffset
-            let bytes = section.binary.data[offset ..< offset + section.content.payloadSize]
+            let bytes = section.binary.data[offset..<offset + section.content.payloadSize]
             try writer.writeBytes(bytes)
         }
     }

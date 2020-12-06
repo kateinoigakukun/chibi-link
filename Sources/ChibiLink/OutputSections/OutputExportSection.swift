@@ -33,12 +33,14 @@ class OutputExportSection: OutputVectorSection {
 
         exports.append(OutputExportSection.Export(kind: .memory(0), name: "memory"))
         if case let .function(symbol) = symbolTable.find("_start"),
-           case let .defined(target) = symbol.target {
+            case let .defined(target) = symbol.target
+        {
             exportFunction(target)
         }
         for export in exportSymbols {
             guard case let .function(symbol) = symbolTable.find(export),
-               case let .defined(target) = symbol.target else {
+                case let .defined(target) = symbol.target
+            else {
                 fatalError("Error: Export function '\(export)' not found")
             }
             exportFunction(target)

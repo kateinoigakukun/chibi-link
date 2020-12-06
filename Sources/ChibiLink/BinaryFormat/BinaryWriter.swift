@@ -1,4 +1,3 @@
-
 class BinaryWriter {
     private let stream: OutputByteStream
     var offset: Offset { stream.currentOffset }
@@ -34,15 +33,13 @@ class BinaryWriter {
     }
 
     func writeULEB128<T>(_ value: T) throws
-        where T: UnsignedInteger, T: FixedWidthInteger
-    {
+    where T: UnsignedInteger, T: FixedWidthInteger {
         let bytes = encodeULEB128(value)
         try stream.write(bytes)
     }
 
     func writeSLEB128<T>(_ value: T) throws
-        where T: SignedInteger, T: FixedWidthInteger
-    {
+    where T: SignedInteger, T: FixedWidthInteger {
         let bytes = encodeSLEB128(value)
         try stream.write(bytes)
     }
@@ -110,8 +107,11 @@ class BinaryWriter {
         }
     }
 
-    func writeDataSegment(_ segment: OutputSegment, startOffset: Offset, relocate: (OutputSegment.Chunk) -> ArraySlice<UInt8>) throws {
-        try writeIndex(0) // memory index
+    func writeDataSegment(
+        _ segment: OutputSegment, startOffset: Offset,
+        relocate: (OutputSegment.Chunk) -> ArraySlice<UInt8>
+    ) throws {
+        try writeIndex(0)  // memory index
         // TODO: i64?
         try writeI32InitExpr(.i32(Int32(startOffset)))
         try writeULEB128(UInt32(segment.size))

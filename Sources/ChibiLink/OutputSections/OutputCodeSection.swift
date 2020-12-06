@@ -9,7 +9,8 @@ class OutputCodeSection: OutputVectorSection {
         var vectorSections: [InputVectorSection] = []
         for section in sections {
             guard case let .rawVector(code, section) = section,
-                  code == .code else { preconditionFailure() }
+                code == .code
+            else { preconditionFailure() }
             totalCount += section.content.count
             vectorSections.append(section)
         }
@@ -24,7 +25,8 @@ class OutputCodeSection: OutputVectorSection {
         }
         for section in sections {
             let body = relocator.relocate(chunk: section)
-            let payload = body[(section.sectionStart + section.content.payloadOffset - section.offset)...]
+            let payload = body[
+                (section.sectionStart + section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)
         }
     }

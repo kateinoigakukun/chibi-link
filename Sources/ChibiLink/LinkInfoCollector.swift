@@ -1,4 +1,3 @@
-
 class LinkInfoCollector: BinaryReaderDelegate {
     var state: BinaryReaderState!
     var currentSection: InputSection!
@@ -29,7 +28,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
         }
         switch sectionCode {
         case .custom, .start:
-            section = .raw(sectionCode, InputRawSection(size: size, offset: state.offset, binary: binary))
+            section = .raw(
+                sectionCode, InputRawSection(size: size, offset: state.offset, binary: binary))
         case .data:
             dataSection = InputDataSection(
                 size: size, offset: state.offset, content: parseVector(), binary: binary
@@ -41,7 +41,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
                     size: size, offset: state.offset, content: parseVector(), binary: binary
                 )
             )
-        default: // vector section
+        default:  // vector section
             section = .rawVector(
                 sectionCode,
                 InputVectorSection(
@@ -53,7 +53,8 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentSection = section
     }
 
-    func onImportFunc(_: Index, _ module: String, _ field: String, _: Int, _ signatureIndex: Index) {
+    func onImportFunc(_: Index, _ module: String, _ field: String, _: Int, _ signatureIndex: Index)
+    {
         let funcImport = FunctionImport(
             module: module, field: field,
             signatureIdx: signatureIndex,
@@ -62,7 +63,9 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.funcImports.append(funcImport)
     }
 
-    func onImportGlobal(_: Index, _ module: String, _ field: String, _: Index, _ type: ValueType, _ mutable: Bool) {
+    func onImportGlobal(
+        _: Index, _ module: String, _ field: String, _: Index, _ type: ValueType, _ mutable: Bool
+    ) {
         let globalImport = GlobalImport(module: module, field: field, type: type, mutable: mutable)
         binary.globalImports.append(globalImport)
     }
@@ -155,9 +158,10 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.symbols.append(.global(symbol))
     }
 
-    func onDataSymbol(_: Index, _ rawFlags: UInt32, _ name: String,
-                      _ content: (segmentIndex: Index, offset: Offset, size: Size)?)
-    {
+    func onDataSymbol(
+        _: Index, _ rawFlags: UInt32, _ name: String,
+        _ content: (segmentIndex: Index, offset: Offset, size: Size)?
+    ) {
         let target: DataSymbol.Target
         let flags = SymbolFlags(rawValue: rawFlags)
         if let content = content, !flags.isUndefined {

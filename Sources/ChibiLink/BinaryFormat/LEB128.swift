@@ -3,8 +3,7 @@ enum LEB128 {
 }
 
 func decodeULEB128<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> (value: T, offset: Int)
-    where T: UnsignedInteger, T: FixedWidthInteger
-{
+where T: UnsignedInteger, T: FixedWidthInteger {
     var index: Int = bytes.startIndex
     var value: T = 0
     var shift: UInt = 0
@@ -19,8 +18,7 @@ func decodeULEB128<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> (value: T, offse
 }
 
 func decodeSLEB128<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> (value: T, offset: Int)
-    where T: SignedInteger, T: FixedWidthInteger
-{
+where T: SignedInteger, T: FixedWidthInteger {
     var index: Int = bytes.startIndex
     var value: T = 0
     var shift: UInt = 0
@@ -37,8 +35,9 @@ func decodeSLEB128<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> (value: T, offse
     return (value, index - bytes.startIndex)
 }
 
-func encodeULEB128<T>(_ value: T, padTo: Int? = nil,
-                      writer: (_ offset: Int, _ value: UInt8) -> Void
+func encodeULEB128<T>(
+    _ value: T, padTo: Int? = nil,
+    writer: (_ offset: Int, _ value: UInt8) -> Void
 ) where T: UnsignedInteger, T: FixedWidthInteger {
     var value = value
     var length = 0
@@ -67,8 +66,7 @@ func encodeULEB128<T>(_ value: T, padTo: Int? = nil,
 }
 
 func encodeULEB128<T>(_ value: T, padTo: Int? = nil) -> [UInt8]
-    where T: UnsignedInteger, T: FixedWidthInteger
-{
+where T: UnsignedInteger, T: FixedWidthInteger {
     var results: [UInt8] = []
     encodeULEB128(value, padTo: padTo, writer: { results.append($1) })
     return results
@@ -90,10 +88,7 @@ func encodeSLEB128<T>(
         value >>= 7
         let offset = length
         length += 1
-        hasMore = !(
-            (value == 0 && (byte & 0x40) == 0) ||
-                (value == -1 && (byte & 0x40) != 0)
-        )
+        hasMore = !((value == 0 && (byte & 0x40) == 0) || (value == -1 && (byte & 0x40) != 0))
         if hasMore || needPad {
             byte |= 0x80
         }
@@ -111,8 +106,7 @@ func encodeSLEB128<T>(
 }
 
 func encodeSLEB128<T>(_ value: T, padTo: Int? = nil) -> [UInt8]
-    where T: SignedInteger, T: FixedWidthInteger
-{
+where T: SignedInteger, T: FixedWidthInteger {
     var results: [UInt8] = []
     encodeSLEB128(value, padTo: padTo, writer: { results.append($1) })
     return results

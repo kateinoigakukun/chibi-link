@@ -44,7 +44,7 @@ class OutputDataSection: OutputVectorSection {
     let segments: [LocatedSegment]
     let initialMemorySize: Size
     private let outputOffsetByInputSegment: [OffsetKey: Offset]
-    
+
     private struct OffsetKey: Hashable {
         let fileID: InputBinary.ID
         let segmentIndex: Index
@@ -81,7 +81,7 @@ class OutputDataSection: OutputVectorSection {
                 let rangeStart = segment.dataRange.startIndex - section.offset
                 let rangeEnd = segment.dataRange.endIndex - section.offset
                 while let headReloc = relocs.last,
-                      (rangeStart..<rangeEnd).contains(headReloc.offset)
+                    (rangeStart..<rangeEnd).contains(headReloc.offset)
                 {
                     relocs.removeLast()
                     segmentRelocs.append(headReloc)
@@ -100,7 +100,8 @@ class OutputDataSection: OutputVectorSection {
             segments.append((segment, memoryOffset))
 
             for chunk in segment.chunks {
-                let key = OffsetKey(fileID: chunk.parentBinary.id, segmentIndex: chunk.segment.index)
+                let key = OffsetKey(
+                    fileID: chunk.parentBinary.id, segmentIndex: chunk.segment.index)
                 assert(outputOffsetByInputSegName[key] == nil)
                 outputOffsetByInputSegName[key] = memoryOffset + chunk.offset
             }

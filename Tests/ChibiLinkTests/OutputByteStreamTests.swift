@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import XCTest
+
+@testable import ChibiLink
 
 class OutputByteStreamTests: XCTestCase {
     func testWriteAt() throws {

@@ -3,11 +3,12 @@ class OutputWriter {
     let symbolTable: SymbolTable
     let inputs: [InputBinary]
     let exportSymbols: [String]
-    init(stream: OutputByteStream,
-         symbolTable: SymbolTable,
-         inputs: [InputBinary],
-         exportSymbols: [String] = [])
-    {
+    init(
+        stream: OutputByteStream,
+        symbolTable: SymbolTable,
+        inputs: [InputBinary],
+        exportSymbols: [String] = []
+    ) {
         writer = BinaryWriter(stream: stream)
         self.symbolTable = symbolTable
         self.inputs = inputs
@@ -47,7 +48,8 @@ class OutputWriter {
             funcSection: funcSection,
             globalSection: globalSection
         )
-        let codeSection = OutputCodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
+        let codeSection = OutputCodeSection(
+            sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
         let memorySection = OutputMemorySection(dataSection: dataSection)
         let elemSection = OutputElementSection(
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
@@ -95,7 +97,7 @@ class OutputWriter {
             try writeSection(nameSectino)
         #endif
     }
-    
+
     func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) {
         let target = GlobalSymbol.Synthesized(
             name: name, context: "_linker", type: .i32,
@@ -140,8 +142,9 @@ class OutputWriter {
         // Synthesize weak undef func stubs
         for sym in symbolTable.symbols() {
             guard case let .function(sym) = sym,
-                  case let .undefined(target) = sym.target,
-                  sym.flags.isWeak else { continue }
+                case let .undefined(target) = sym.target,
+                sym.flags.isWeak
+            else { continue }
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
             let synthesized = FunctionSymbol.Synthesized.weakUndefStub(target)
             _ = symbolTable.addFunctionSymbol(.synthesized(synthesized), flags: flags)

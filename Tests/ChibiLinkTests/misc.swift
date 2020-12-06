@@ -1,5 +1,6 @@
-@testable import ChibiLink
 import Foundation
+
+@testable import ChibiLink
 
 func exec(_ launchPath: String, _ arguments: [String]) {
     let process = Process()
@@ -89,7 +90,7 @@ class InMemoryOutputByteStream: OutputByteStream {
     private(set) var currentOffset: Offset = 0
 
     func write(_ bytes: [UInt8], at offset: Offset) throws {
-        for index in offset ..< (offset + bytes.count) {
+        for index in offset..<(offset + bytes.count) {
             self.bytes[index] = bytes[index - offset]
         }
     }

@@ -1,4 +1,6 @@
-public func performLinker(_ filenames: [String], outputStream: OutputByteStream, exports: [String] = []) throws {
+public func performLinker(
+    _ filenames: [String], outputStream: OutputByteStream, exports: [String] = []
+) throws {
     let symtab = SymbolTable()
     var inputs: [InputBinary] = []
     for filename in filenames {
@@ -9,6 +11,7 @@ public func performLinker(_ filenames: [String], outputStream: OutputByteStream,
         try reader.readModule()
         inputs.append(binary)
     }
-    let writer = OutputWriter(stream: outputStream, symbolTable: symtab, inputs: inputs, exportSymbols: exports)
+    let writer = OutputWriter(
+        stream: outputStream, symbolTable: symtab, inputs: inputs, exportSymbols: exports)
     try writer.writeBinary()
 }

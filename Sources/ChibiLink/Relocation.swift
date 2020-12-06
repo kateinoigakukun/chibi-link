@@ -9,7 +9,7 @@ extension GenericInputSection: RelocatableChunk {
     var sectionStart: Offset { offset }
     var parentBinary: InputBinary { binary }
     var relocationRange: Range<Index> {
-        sectionStart ..< sectionStart + size
+        sectionStart..<sectionStart + size
     }
 }
 
@@ -22,7 +22,7 @@ extension InputSection: RelocatableChunk {
         case .rawVector(_, let sec): return sec.relocations
         }
     }
-    
+
     var sectionStart: Offset {
         switch self {
         case .data(let sec): return sec.offset
@@ -31,7 +31,7 @@ extension InputSection: RelocatableChunk {
         case .rawVector(_, let sec): return sec.offset
         }
     }
-    
+
     var size: Size {
         switch self {
         case .data(let sec): return sec.size
@@ -42,14 +42,14 @@ extension InputSection: RelocatableChunk {
     }
 
     var chunkBytes: ArraySlice<UInt8> {
-        binary.data[sectionStart ..< sectionStart + size]
+        binary.data[sectionStart..<sectionStart + size]
     }
     var parentBinary: InputBinary {
         binary
     }
 
     var relocationRange: Range<Index> {
-        sectionStart ..< sectionStart + size
+        sectionStart..<sectionStart + size
     }
 }
 
@@ -62,11 +62,12 @@ class Relocator {
     let dataSection: OutputDataSection
     let globalSection: OutputGlobalSection
 
-    init(symbolTable: SymbolTable, typeSection: OutputTypeSection,
-         importSection: OutputImportSeciton, funcSection: OutputFunctionSection,
-         elemSection: OutputElementSection, dataSection: OutputDataSection,
-         globalSection: OutputGlobalSection)
-    {
+    init(
+        symbolTable: SymbolTable, typeSection: OutputTypeSection,
+        importSection: OutputImportSeciton, funcSection: OutputFunctionSection,
+        elemSection: OutputElementSection, dataSection: OutputDataSection,
+        globalSection: OutputGlobalSection
+    ) {
         self.symbolTable = symbolTable
         self.typeSection = typeSection
         self.importSection = importSection
@@ -92,8 +93,9 @@ class Relocator {
     ) {
         let offsetFromSection = range.startIndex - sectionOffset
         for reloc in relocations {
-            apply(relocation: reloc, offsetFromSection: offsetFromSection,
-                  binary: binary, bytes: &chunk, in: range)
+            apply(
+                relocation: reloc, offsetFromSection: offsetFromSection,
+                binary: binary, bytes: &chunk, in: range)
         }
     }
 
@@ -128,25 +130,26 @@ class Relocator {
         }
         switch relocation.type {
         case .tableIndexI32,
-             .tableIndexI64,
-             .tableIndexSLEB,
-             .tableIndexSLEB64,
-             .tableIndexRelSLEB:
+            .tableIndexI64,
+            .tableIndexSLEB,
+            .tableIndexSLEB64,
+            .tableIndexRelSLEB:
             return UInt64(elemSection.indexOffset(for: binary)! + current)
         case .memoryAddressLEB,
-             .memoryAddressLeb64,
-             .memoryAddressSLEB,
-             .memoryAddressSLEB64,
-             .memoryAddressRelSLEB,
-             .memoryAddressRelSLEB64,
-             .memoryAddressI32,
-             .memoryAddressI64:
+            .memoryAddressLeb64,
+            .memoryAddressSLEB,
+            .memoryAddressSLEB64,
+            .memoryAddressRelSLEB,
+            .memoryAddressRelSLEB64,
+            .memoryAddressI32,
+            .memoryAddressI64:
             guard case let .data(dataSym) = symbol else {
                 fatalError()
             }
             switch dataSym.target {
             case let .defined(target):
-                let startVA = dataSection.startVirtualAddress(for: target.segment, binary: target.binary)!
+                let startVA = dataSection.startVirtualAddress(
+                    for: target.segment, binary: target.binary)!
                 return UInt64(startVA + target.offset + Int(relocation.addend))
             case .undefined where dataSym.flags.isWeak:
                 return 0
@@ -166,11 +169,14 @@ class Relocator {
             case let .defined(target):
                 return UInt64(functionIndex(for: target))
             case .undefined where funcSym.flags.isWeak:
-                fatalError("unreachable: weak undef symbols should be replaced with synthesized stub function")
+                fatalError(
+                    "unreachable: weak undef symbols should be replaced with synthesized stub function"
+                )
             case let .undefined(funcImport):
                 return UInt64(importSection.importIndex(for: funcImport)!)
             case let .synthesized(target):
-                return UInt64(importSection.functionCount + symbolTable.synthesizedFuncIndex(for: target)!)
+                return UInt64(
+                    importSection.functionCount + symbolTable.synthesizedFuncIndex(for: target)!)
             }
         case .globalIndexLEB, .globalIndexI32:
             guard case let .global(globalSym) = symbol else {
@@ -182,7 +188,8 @@ class Relocator {
             case let .undefined(globalImport):
                 return UInt64(importSection.importIndex(for: globalImport)!)
             case let .synthesized(target):
-                return UInt64(importSection.globalCount + symbolTable.synthesizedGlobalIndex(for: target)!)
+                return UInt64(
+                    importSection.globalCount + symbolTable.synthesizedGlobalIndex(for: target)!)
             }
         case .functionOffsetI32:
             guard case let .function(funcSym) = symbol,
@@ -240,8 +247,8 @@ class Relocator {
     }
 }
 
-private extension RelocType {
-    enum OutputType {
+extension RelocType {
+    fileprivate enum OutputType {
         case ULEB128_32Bit
         case ULEB128_64Bit
         case SLEB128_32Bit
@@ -250,32 +257,32 @@ private extension RelocType {
         case LE64Bit
     }
 
-    var outputType: OutputType {
+    fileprivate var outputType: OutputType {
         switch self {
         case .typeIndexLEB,
-             .functionIndexLEB,
-             .globalIndexLEB,
-             .memoryAddressLEB:
+            .functionIndexLEB,
+            .globalIndexLEB,
+            .memoryAddressLEB:
             return .ULEB128_32Bit
         case .memoryAddressLeb64:
             return .ULEB128_64Bit
         case .tableIndexSLEB,
-             .tableIndexRelSLEB,
-             .memoryAddressSLEB,
-             .memoryAddressRelSLEB:
+            .tableIndexRelSLEB,
+            .memoryAddressSLEB,
+            .memoryAddressRelSLEB:
             return .SLEB128_32Bit
         case .tableIndexSLEB64,
-             .memoryAddressSLEB64,
-             .memoryAddressRelSLEB64:
+            .memoryAddressSLEB64,
+            .memoryAddressRelSLEB64:
             return .SLEB128_64Bit
         case .tableIndexI32,
-             .memoryAddressI32,
-             .functionOffsetI32,
-             .sectionOffsetI32,
-             .globalIndexI32:
+            .memoryAddressI32,
+            .functionOffsetI32,
+            .sectionOffsetI32,
+            .globalIndexI32:
             return .LE32Bit
         case .tableIndexI64,
-             .memoryAddressI64:
+            .memoryAddressI64:
             return .LE64Bit
         }
     }
@@ -286,7 +293,7 @@ func encodeLittleEndian<T>(
     writer: (_ offset: Int, _ byte: UInt8) -> Void
 ) where T: FixedWidthInteger {
     let size = MemoryLayout<T>.size
-    for offset in 0 ..< size {
+    for offset in 0..<size {
         let shift = offset * Int(8)
         let mask: T = 0xFF << shift
         writer(offset, UInt8((value & mask) >> shift))
@@ -294,11 +301,10 @@ func encodeLittleEndian<T>(
 }
 
 func decodeLittleEndian<T>(_ bytes: ArraySlice<UInt8>, _: T.Type) -> T
-    where T: FixedWidthInteger
-{
+where T: FixedWidthInteger {
     var value: T = 0
     let size = MemoryLayout<T>.size
-    for offset in 0 ..< size {
+    for offset in 0..<size {
         let shift = offset * Int(8)
         let byte = bytes[bytes.startIndex + offset]
         value += numericCast(byte) << shift

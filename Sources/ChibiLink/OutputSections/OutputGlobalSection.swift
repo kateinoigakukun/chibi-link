@@ -15,7 +15,8 @@ class OutputGlobalSection: OutputVectorSection {
 
         for section in sections {
             guard case let .rawVector(code, section) = section,
-                  code == .global else { preconditionFailure() }
+                code == .global
+            else { preconditionFailure() }
             indexOffsets[section.binary.id] = totalCount + offset
             totalCount += section.content.count
             vectorSections.append(section)
@@ -38,7 +39,8 @@ class OutputGlobalSection: OutputVectorSection {
         }
         for section in sections {
             let body = relocator.relocate(chunk: section)
-            let payload = body[(section.sectionStart + section.content.payloadOffset - section.offset)...]
+            let payload = body[
+                (section.sectionStart + section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)
         }
     }

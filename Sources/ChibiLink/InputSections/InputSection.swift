@@ -10,7 +10,7 @@ class InputVectorContent<Element> {
     let payloadSize: Size
     let count: Int
     var elements: [Element] = []
-    
+
     internal init(payloadOffset: Offset, payloadSize: Size, count: Int) {
         self.payloadOffset = payloadOffset
         self.payloadSize = payloadSize
@@ -25,7 +25,7 @@ class GenericInputSection<Content> {
     weak var _binary: InputBinary!
     var binary: InputBinary { _binary }
     var relocations: [Relocation] = []
-    
+
     init(size: Size, offset: Offset, content: Content, binary: InputBinary) {
         self.size = size
         self.offset = offset
@@ -48,13 +48,14 @@ enum InputSection {
     case element(InputElementSection)
     case raw(SectionCode, InputRawSection)
     case rawVector(SectionCode, InputVectorSection)
-    
+
     var sectionCode: SectionCode {
         switch self {
         case .data: return .data
         case .element: return .elem
         case let .raw(code, _),
-             let .rawVector(code, _): return code
+            let .rawVector(code, _):
+            return code
         }
     }
 
@@ -83,7 +84,7 @@ enum InputSection {
             sec.relocations.append(relocation)
         }
     }
-    
+
     var binary: InputBinary {
         switch self {
         case .data(let sec): return sec.binary
