@@ -57,26 +57,29 @@ enum Opcode: UInt8 {
 }
 
 enum RelocType: UInt8, Equatable {
-    case functionIndexLEB = 0
-    case tableIndexSLEB = 1
-    case tableIndexI32 = 2
-    case memoryAddressLEB = 3
-    case memoryAddressSLEB = 4
-    case memoryAddressI32 = 5
-    case typeIndexLEB = 6
-    case globalIndexLEB = 7
-    case functionOffsetI32 = 8
-    case sectionOffsetI32 = 9
-    //    case eventIndexLeb = 10
-    case memoryAddressRelSLEB = 11
-    case tableIndexRelSLEB = 12
-    case globalIndexI32 = 13
-    case memoryAddressLeb64 = 14
-    case memoryAddressSLEB64 = 15
-    case memoryAddressI64 = 16
-    case memoryAddressRelSLEB64 = 17
-    case tableIndexSLEB64 = 18
-    case tableIndexI64 = 19
+    case FUNCTION_INDEX_LEB     =  0
+    case TABLE_INDEX_SLEB       =  1
+    case TABLE_INDEX_I32        =  2
+    case MEMORY_ADDR_LEB        =  3
+    case MEMORY_ADDR_SLEB       =  4
+    case MEMORY_ADDR_I32        =  5
+    case TYPE_INDEX_LEB         =  6
+    case GLOBAL_INDEX_LEB       =  7
+    case FUNCTION_OFFSET_I32    =  8
+    case SECTION_OFFSET_I32     =  9
+//  case EVENT_INDEX_LEB        = 10
+    case MEMORY_ADDR_REL_SLEB   = 11
+    case TABLE_INDEX_REL_SLEB   = 12
+    case GLOBAL_INDEX_I32       = 13
+    case MEMORY_ADDR_LEB64      = 14
+    case MEMORY_ADDR_SLEB64     = 15
+    case MEMORY_ADDR_I64        = 16
+    case MEMORY_ADDR_REL_SLEB64 = 17
+    case TABLE_INDEX_SLEB64     = 18
+    case TABLE_INDEX_I64        = 19
+//  case TABLE_NUMBER_LEB       = 20
+//  case MEMORY_ADDR_TLS_SLEB   = 21
+//  case FUNCTION_OFFSET_I64    = 22
 }
 
 let LIMITS_HAS_MAX_FLAG: UInt8 = 0x1

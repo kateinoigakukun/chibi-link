@@ -79,7 +79,7 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(codeSection.relocations.count, 1)
         let codeFirstReloc = try XCTUnwrap(codeSection.relocations.first)
         XCTAssertEqual(codeFirstReloc.offset, 4)
-        XCTAssertEqual(codeFirstReloc.type, .functionIndexLEB)
+        XCTAssertEqual(codeFirstReloc.type, .FUNCTION_INDEX_LEB)
         XCTAssertEqual(codeFirstReloc.symbolIndex, 0)
     }
 }

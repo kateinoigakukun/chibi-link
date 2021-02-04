@@ -403,9 +403,9 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
             let index = readIndex()
             let addend: Int32
             switch type {
-            case .memoryAddressLEB,
-                .memoryAddressSLEB,
-                .memoryAddressI32:
+            case .MEMORY_ADDR_LEB,
+                .MEMORY_ADDR_SLEB,
+                .MEMORY_ADDR_I32:
                 addend = readS32Leb128()
             default:
                 addend = 0

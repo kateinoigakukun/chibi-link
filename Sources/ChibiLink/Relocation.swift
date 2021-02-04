@@ -124,24 +124,24 @@ class Relocator {
 
     func translate(relocation: Relocation, binary: InputBinary, current: Int) -> UInt64 {
         var symbol: Symbol?
-        if relocation.type != .typeIndexLEB {
+        if relocation.type != .TYPE_INDEX_LEB {
             symbol = binary.symbols[relocation.symbolIndex]
         }
         switch relocation.type {
-        case .tableIndexI32,
-            .tableIndexI64,
-            .tableIndexSLEB,
-            .tableIndexSLEB64,
-            .tableIndexRelSLEB:
+        case .TABLE_INDEX_I32,
+            .TABLE_INDEX_I64,
+            .TABLE_INDEX_SLEB,
+            .TABLE_INDEX_SLEB64,
+            .TABLE_INDEX_REL_SLEB:
             return UInt64(elemSection.indexOffset(for: binary)! + current)
-        case .memoryAddressLEB,
-            .memoryAddressLeb64,
-            .memoryAddressSLEB,
-            .memoryAddressSLEB64,
-            .memoryAddressRelSLEB,
-            .memoryAddressRelSLEB64,
-            .memoryAddressI32,
-            .memoryAddressI64:
+        case .MEMORY_ADDR_LEB,
+            .MEMORY_ADDR_LEB64,
+            .MEMORY_ADDR_SLEB,
+            .MEMORY_ADDR_SLEB64,
+            .MEMORY_ADDR_REL_SLEB,
+            .MEMORY_ADDR_REL_SLEB64,
+            .MEMORY_ADDR_I32,
+            .MEMORY_ADDR_I64:
             guard case let .data(dataSym) = symbol else {
                 fatalError()
             }
@@ -157,10 +157,10 @@ class Relocator {
             case let .synthesized(target):
                 return UInt64(target.address)
             }
-        case .typeIndexLEB:
+        case .TYPE_INDEX_LEB:
             // for R_WASM_TYPE_INDEX_LEB, symbolIndex means the index for the type
             return UInt64(typeSection.indexOffset(for: binary)! + relocation.symbolIndex)
-        case .functionIndexLEB:
+        case .FUNCTION_INDEX_LEB:
             guard case let .function(funcSym) = symbol else {
                 fatalError()
             }
@@ -177,7 +177,7 @@ class Relocator {
                 return UInt64(
                     importSection.functionCount + symbolTable.synthesizedFuncIndex(for: target)!)
             }
-        case .globalIndexLEB, .globalIndexI32:
+        case .GLOBAL_INDEX_LEB, .GLOBAL_INDEX_I32:
             guard case let .global(globalSym) = symbol else {
                 fatalError()
             }
@@ -190,14 +190,14 @@ class Relocator {
                 return UInt64(
                     importSection.globalCount + symbolTable.synthesizedGlobalIndex(for: target)!)
             }
-        case .functionOffsetI32:
+        case .FUNCTION_OFFSET_I32:
             guard case let .function(funcSym) = symbol,
                 case .defined = funcSym.target
             else {
                 fatalError()
             }
         // TODO: Need to parse each function code to derive code offset
-        case .sectionOffsetI32:
+        case .SECTION_OFFSET_I32:
             // TODO: Support section symbol
             break
         }
@@ -258,30 +258,30 @@ extension RelocType {
 
     fileprivate var outputType: OutputType {
         switch self {
-        case .typeIndexLEB,
-            .functionIndexLEB,
-            .globalIndexLEB,
-            .memoryAddressLEB:
+        case .TYPE_INDEX_LEB,
+            .FUNCTION_INDEX_LEB,
+            .GLOBAL_INDEX_LEB,
+            .MEMORY_ADDR_LEB:
             return .ULEB128_32Bit
-        case .memoryAddressLeb64:
+        case .MEMORY_ADDR_LEB64:
             return .ULEB128_64Bit
-        case .tableIndexSLEB,
-            .tableIndexRelSLEB,
-            .memoryAddressSLEB,
-            .memoryAddressRelSLEB:
+        case .TABLE_INDEX_SLEB,
+            .TABLE_INDEX_REL_SLEB,
+            .MEMORY_ADDR_SLEB,
+            .MEMORY_ADDR_REL_SLEB:
             return .SLEB128_32Bit
-        case .tableIndexSLEB64,
-            .memoryAddressSLEB64,
-            .memoryAddressRelSLEB64:
+        case .TABLE_INDEX_SLEB64,
+            .MEMORY_ADDR_SLEB64,
+            .MEMORY_ADDR_REL_SLEB64:
             return .SLEB128_64Bit
-        case .tableIndexI32,
-            .memoryAddressI32,
-            .functionOffsetI32,
-            .sectionOffsetI32,
-            .globalIndexI32:
+        case .TABLE_INDEX_I32,
+            .MEMORY_ADDR_I32,
+            .FUNCTION_OFFSET_I32,
+            .SECTION_OFFSET_I32,
+            .GLOBAL_INDEX_I32:
             return .LE32Bit
-        case .tableIndexI64,
-            .memoryAddressI64:
+        case .TABLE_INDEX_I64,
+            .MEMORY_ADDR_I64:
             return .LE64Bit
         }
     }
