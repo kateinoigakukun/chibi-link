@@ -91,10 +91,9 @@ class Relocator {
         chunk: inout [UInt8], relocations: [Relocation], binary: InputBinary,
         in range: Range<Int>, sectionOffset: Int
     ) {
-        let offsetFromSection = range.startIndex - sectionOffset
         for reloc in relocations {
             apply(
-                relocation: reloc, offsetFromSection: offsetFromSection,
+                relocation: reloc, sectionOffset: sectionOffset,
                 binary: binary, bytes: &chunk, in: range)
         }
     }
@@ -206,10 +205,10 @@ class Relocator {
     }
 
     func apply(
-        relocation: Relocation, offsetFromSection: Offset, binary: InputBinary,
+        relocation: Relocation, sectionOffset: Offset, binary: InputBinary,
         bytes: inout [UInt8], in range: Range<Int>
     ) {
-        let location = range.startIndex + relocation.offset - offsetFromSection
+        let location = sectionOffset + relocation.offset
         let currentValue: Int
         switch relocation.type.outputType {
         case .ULEB128_32Bit:

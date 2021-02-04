@@ -5,7 +5,7 @@ class OutputSegment {
     struct Chunk {
         let offset: Offset
         let segment: DataSegment
-        var relocs: [Relocation]
+        let relocs: [Relocation]
         weak var section: InputDataSection!
     }
 
