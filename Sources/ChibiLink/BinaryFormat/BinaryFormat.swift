@@ -80,6 +80,7 @@ enum RelocType: UInt8, Equatable {
 //  case TABLE_NUMBER_LEB       = 20
 //  case MEMORY_ADDR_TLS_SLEB   = 21
 //  case FUNCTION_OFFSET_I64    = 22
+    case MEMORY_ADDR_SELFREL_I32 = 23
 }
 
 let LIMITS_HAS_MAX_FLAG: UInt8 = 0x1

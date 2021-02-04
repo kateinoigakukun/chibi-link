@@ -122,7 +122,7 @@ class Relocator {
         return base + offset
     }
 
-    func translate(relocation: Relocation, binary: InputBinary, current: Int) -> UInt64 {
+    func translate(relocation: Relocation, binary: InputBinary, current: Int, location: Offset) -> UInt64 {
         var symbol: Symbol?
         if relocation.type != .TYPE_INDEX_LEB {
             symbol = binary.symbols[relocation.symbolIndex]
@@ -150,6 +150,22 @@ class Relocator {
                 let startVA = dataSection.startVirtualAddress(
                     for: target.segment, binary: target.binary)!
                 return UInt64(startVA + target.offset + Int(relocation.addend))
+            case .undefined where dataSym.flags.isWeak:
+                return 0
+            case .undefined:
+                fatalError()
+            case let .synthesized(target):
+                return UInt64(target.address)
+            }
+        case .MEMORY_ADDR_SELFREL_I32:
+            guard case let .data(dataSym) = symbol else {
+                fatalError()
+            }
+            switch dataSym.target {
+            case let .defined(target):
+                let startVA = dataSection.startVirtualAddress(
+                    for: target.segment, binary: target.binary)!
+                return UInt64(startVA + target.offset + Int(relocation.addend) - location)
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:
@@ -225,7 +241,7 @@ class Relocator {
             currentValue = Int(decodeLittleEndian(bytes[location...], UInt64.self))
         }
 
-        let value = translate(relocation: relocation, binary: binary, current: currentValue)
+        let value = translate(relocation: relocation, binary: binary, current: currentValue, location: location)
         func writeByte(offset: Int, value: UInt8) {
             bytes[location + offset] = value
         }
@@ -276,6 +292,7 @@ extension RelocType {
             return .SLEB128_64Bit
         case .TABLE_INDEX_I32,
             .MEMORY_ADDR_I32,
+            .MEMORY_ADDR_SELFREL_I32,
             .FUNCTION_OFFSET_I32,
             .SECTION_OFFSET_I32,
             .GLOBAL_INDEX_I32:
