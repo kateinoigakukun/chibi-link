@@ -2,10 +2,6 @@
     import Darwin
 #elseif canImport(WASILibc)
     import WASILibc
-    let ENOENT: Int32 = 2
-    let EACCES: Int32 = 13
-    let ENOTDIR: Int32 = 20
-    let EISDIR: Int32 = 21
 #elseif canImport(Glibc)
     import Glibc
 #endif
@@ -22,14 +18,14 @@ enum FileSystemError: Error {
 
 extension FileSystemError {
     init(errno: Int32) {
-        switch errno {
-        case EACCES:
+        switch POSIXErrorCode(rawValue: errno) {
+        case .EACCES:
             self = .invalidAccess
-        case EISDIR:
+        case .EISDIR:
             self = .isDirectory
-        case ENOENT:
+        case .ENOENT:
             self = .noEntry
-        case ENOTDIR:
+        case .ENOTDIR:
             self = .notDirectory
         default:
             self = .unknownOSError(errno)

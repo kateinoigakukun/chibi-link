@@ -8,7 +8,7 @@
     typealias FilePointer = OpaquePointer
 #elseif canImport(Glibc)
     import Glibc
-    typealias FilePointer = OpaquePointer
+    typealias FilePointer = UnsafeMutablePointer<FILE>
 #endif
 
 public protocol OutputByteStream {
@@ -58,7 +58,7 @@ public class FileOutputByteStream: OutputByteStream {
         while true {
             let n = fwrite(ptr, 1, length, filePointer)
             if n < 0 {
-                if errno == EINTR { continue }
+                if POSIXErrorCode(rawValue: errno) == .EINTR { continue }
                 throw FileSystemError.ioError
             } else if n != length {
                 throw FileSystemError.ioError
