@@ -153,7 +153,7 @@ class Relocator {
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:
-                fatalError()
+                undefinedSymbol(dataSym)
             case let .synthesized(target):
                 return UInt64(target.address)
             }
@@ -169,7 +169,7 @@ class Relocator {
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:
-                fatalError()
+                undefinedSymbol(dataSym)
             case let .synthesized(target):
                 return UInt64(target.address)
             }
@@ -326,4 +326,8 @@ where T: FixedWidthInteger {
         value += numericCast(byte) << shift
     }
     return value
+}
+
+fileprivate func undefinedSymbol<S: SymbolProtocol>(_ symbol: S) {
+    fatalError("error undefined symbol: \(symbol.target.name)")
 }
