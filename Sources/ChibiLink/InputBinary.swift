@@ -53,7 +53,7 @@ class InputBinary {
     var sections: [InputSection] = []
     var funcImports: [FunctionImport] = []
     var globalImports: [GlobalImport] = []
-    var exports: [Export] = []
+    var exports: [Index: Export] = [:]
     var functionCount: Int!
     var debugNames: [String] = []
     var symbols: [Symbol] = []

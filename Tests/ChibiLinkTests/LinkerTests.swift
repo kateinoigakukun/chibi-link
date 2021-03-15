@@ -215,4 +215,30 @@ class LinkerTests: XCTestCase {
         try Data(bytes).write(to: output)
         try reader.readModule()
     }
+
+    func testExportedAttr() throws {
+        let bytes = try testLink([
+            "foo.ll": .llvm(
+                """
+                target triple = "wasm32-unknown-unknown"
+                define hidden i32 @foo() #0 {
+                    ret i32 0
+                }
+                attributes #0 = { "wasm-export-name"="exported_func" }
+                """)
+        ])
+        class Collector: NopDelegate {
+            var exported: [String] = []
+            override func onExport(_: Int, _: ExternalKind, _: Int, _ name: String) {
+                exported.append(name)
+            }
+        }
+        let collector = Collector()
+        let reader = BinaryReader(bytes: bytes, delegate: collector)
+        let (output, _) = makeTemporaryFile()
+        print(output)
+        try Data(bytes).write(to: output)
+        try reader.readModule()
+        XCTAssertEqual(collector.exported.sorted(), ["exported_func", "memory"].sorted())
+    }
 }

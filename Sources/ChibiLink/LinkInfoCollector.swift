@@ -84,7 +84,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
 
     func onExport(_: Index, _ kind: ExternalKind, _ itemIndex: Index, _ name: String) {
         let export = Export(kind: kind, name: name, index: itemIndex)
-        binary.exports.append(export)
+        binary.exports[itemIndex] = export
     }
 
     func beginDataSegment(_ index: Index, _ memoryIndex: Index) {

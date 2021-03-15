@@ -34,7 +34,7 @@ class InputBinaryTests: XCTestCase {
         XCTAssertEqual(binary.sections.count, 4)
         XCTAssertEqual(binary.functionCount, 1)
         XCTAssertEqual(binary.exports.count, 1)
-        let firstExport = try XCTUnwrap(binary.exports.first)
+        let firstExport = try XCTUnwrap(binary.exports.first?.value)
         XCTAssertEqual(firstExport.name, "main")
         XCTAssertEqual(firstExport.index, 0)
         XCTAssertEqual(firstExport.kind, .func)

@@ -24,14 +24,16 @@ class OutputExportSection: OutputVectorSection {
         funcSection: OutputFunctionSection,
         globalSection: OutputGlobalSection
     ) {
-        var exports: [Export] = []
+        var exports: [String: Export] = [:]
         func exportFunction(_ target: IndexableTarget) {
             let base = funcSection.indexOffset(for: target.binary)!
             let index = base + target.itemIndex - target.binary.funcImports.count
-            exports.append(OutputExportSection.Export(kind: .function(index), name: target.name))
+            let export = target.binary.exports[target.itemIndex]
+            let exportName = export?.name ?? target.name
+            exports[exportName] = OutputExportSection.Export(kind: .function(index), name: exportName)
         }
 
-        exports.append(OutputExportSection.Export(kind: .memory(0), name: "memory"))
+        exports["memory"] = OutputExportSection.Export(kind: .memory(0), name: "memory")
         if case let .function(symbol) = symbolTable.find("_start"),
             case let .defined(target) = symbol.target
         {
@@ -45,7 +47,13 @@ class OutputExportSection: OutputVectorSection {
             }
             exportFunction(target)
         }
-        self.exports = exports
+        for export in symbolTable.symbols() where export.flags.isExported {
+            guard case let .function(symbol) = export,
+                case let .defined(target) = symbol.target
+            else { continue }
+            exportFunction(target)
+        }
+        self.exports = Array(exports.values)
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {
