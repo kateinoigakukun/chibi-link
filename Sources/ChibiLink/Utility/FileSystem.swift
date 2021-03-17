@@ -2,6 +2,21 @@
     import Darwin
 #elseif canImport(WASILibc)
     import WASILibc
+
+/// Enumeration describing **a subset of** POSIX error codes.
+public enum POSIXErrorCode: Int32 {
+    /// Interrupted system call.
+    case EINTR           = 4
+    /// Permission denied.
+    case EACCES          = 13
+    // Is a directory.
+    case EISDIR          = 21
+    /// No such file or directory.
+    case ENOENT          = 2
+    /// Not a directory.
+    case ENOTDIR         = 20
+}
+
 #elseif canImport(Glibc)
     import Glibc
 #endif
