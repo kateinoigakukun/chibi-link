@@ -109,7 +109,7 @@ class BinaryWriter {
 
     func writeDataSegment(
         _ segment: OutputSegment, startOffset: Offset,
-        relocate: (OutputSegment.Chunk) -> ArraySlice<UInt8>
+        relocate: (OutputSegment.Chunk) throws -> ArraySlice<UInt8>
     ) throws {
         try writeIndex(0)  // memory index
         // TODO: i64?

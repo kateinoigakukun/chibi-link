@@ -37,12 +37,12 @@ protocol BinaryReaderDelegate {
 
     func onInitExprI32ConstExpr(_ segmentIndex: Index, _ value: UInt32)
 
-    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
-    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index)
+    func onFunctionSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) throws
+    func onGlobalSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) throws
     func onDataSymbol(
         _ index: Index, _ flags: UInt32, _ name: String,
         _ content: (segmentIndex: Index, offset: Offset, size: Size)?
-    )
+    ) throws
     func onSegmentInfo(
         _ index: Index, _ name: String,
         _ alignment: Int, _ flags: UInt32)
@@ -68,6 +68,9 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
         case expectConstOpcode(UInt8)
         case expectI32Const(ConstOpcode)
         case expectEnd
+        case unsupportedImportKind(ExternalKind)
+        case invalidImportKind(UInt8)
+        case invalidSymbolType(UInt8)
     }
 
     typealias State = BinaryReaderState
@@ -277,9 +280,9 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 globalImportCount += 1
             default:
                 if let kind = kind {
-                    fatalError("Error: Import kind '\(kind)' is not supported")
+                    throw Error.unsupportedImportKind(kind)
                 } else {
-                    fatalError("Error: Import kind '(rawKind = \(rawKind))' is not supported")
+                    throw Error.invalidImportKind(rawKind)
                 }
             }
         }
@@ -426,7 +429,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
 
             switch linkingType {
             case .symbolTable:
-                readSymbolTable()
+                try readSymbolTable()
             case .segmentInfo:
                 readSegmentInfo()
             case .initFunctions:
@@ -445,12 +448,14 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
         }
     }
 
-    func readSymbolTable() {
+    func readSymbolTable() throws {
         let count = Int(readU32Leb128())
         for i in 0..<count {
             let symTypeCode = readU8Fixed()
             let symFlags = readU32Leb128()
-            let symType = SymbolType(rawValue: symTypeCode)!
+            guard let symType = SymbolType(rawValue: symTypeCode) else {
+                throw Error.invalidSymbolType(symTypeCode)
+            }
             let binding = symFlags & SYMBOL_BINDING_MASK
 
             switch symType {
@@ -464,12 +469,13 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 }
                 switch symType {
                 case .function:
-                    delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
+                    try delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
                 case .global:
-                    delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
+                    try delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
                 case .event, .table:
                     break // TODO: Support event and table relocations
-                default: fatalError("unreachable")
+                default:
+                    throw Error.invalidSymbolType(symType.rawValue)
                 }
             case .data:
                 let name = readString()
@@ -481,7 +487,7 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                         Size(readU32Leb128())
                     )
                 }
-                delegate.onDataSymbol(i, symFlags, name, content)
+                try delegate.onDataSymbol(i, symFlags, name, content)
             case .section:
                 assert(binding == SYMBOL_BINDING_LOCAL)
                 _ = readU32Leb128()  // section index

@@ -124,7 +124,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         currentRelocTargetSection.append(relocation: reloc)
     }
 
-    func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
+    func onFunctionSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) throws {
         let target: FunctionSymbol.Target
         let flags = SymbolFlags(rawValue: rawFlags)
         if let name = name, !flags.isUndefined {
@@ -136,12 +136,12 @@ class LinkInfoCollector: BinaryReaderDelegate {
         if flags.isLocal {
             symbol = FunctionSymbol(target: target, flags: flags)
         } else {
-            symbol = symbolTable.addFunctionSymbol(target, flags: flags)
+            symbol = try symbolTable.addFunctionSymbol(target, flags: flags)
         }
         binary.symbols.append(.function(symbol))
     }
 
-    func onGlobalSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) {
+    func onGlobalSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) throws {
         let target: GlobalSymbol.Target
         let flags = SymbolFlags(rawValue: rawFlags)
         if let name = name, !flags.isUndefined {
@@ -153,7 +153,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         if flags.isLocal {
             symbol = GlobalSymbol(target: target, flags: flags)
         } else {
-            symbol = symbolTable.addGlobalSymbol(target, flags: flags)
+            symbol = try symbolTable.addGlobalSymbol(target, flags: flags)
         }
         binary.symbols.append(.global(symbol))
     }
@@ -161,7 +161,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
     func onDataSymbol(
         _: Index, _ rawFlags: UInt32, _ name: String,
         _ content: (segmentIndex: Index, offset: Offset, size: Size)?
-    ) {
+    ) throws {
         let target: DataSymbol.Target
         let flags = SymbolFlags(rawValue: rawFlags)
         if let content = content, !flags.isUndefined {
@@ -182,7 +182,7 @@ class LinkInfoCollector: BinaryReaderDelegate {
         if flags.isLocal {
             symbol = DataSymbol(target: target, flags: flags)
         } else {
-            symbol = symbolTable.addDataSymbol(target, flags: flags)
+            symbol = try symbolTable.addDataSymbol(target, flags: flags)
         }
         binary.symbols.append(.data(symbol))
     }

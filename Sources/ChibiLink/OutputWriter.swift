@@ -23,15 +23,15 @@ class OutputWriter {
             sectionsMap[sec.sectionCode, default: []].append(sec)
         }
 
-        synthesizeFunctionSymbols()
+        try synthesizeFunctionSymbols()
 
         let typeSection = OutputTypeSection(
             sections: sectionsMap[.type] ?? [], symbolTable: symbolTable
         )
         let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
 
-        synthesizeDataSymbols(dataSection: dataSection)
-        synthesizeStackPointer(dataSection: dataSection)
+        try synthesizeDataSymbols(dataSection: dataSection)
+        try synthesizeStackPointer(dataSection: dataSection)
 
         let importSection = OutputImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = OutputFunctionSection(
@@ -42,7 +42,7 @@ class OutputWriter {
             sections: sectionsMap[.global] ?? [],
             importSection: importSection, symbolTable: symbolTable
         )
-        let exportSection = OutputExportSection(
+        let exportSection = try OutputExportSection(
             symbolTable: symbolTable,
             exportSymbols: exportSymbols,
             funcSection: funcSection,
@@ -98,46 +98,46 @@ class OutputWriter {
         #endif
     }
 
-    func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) {
+    func addSynthesizedSymbol(name: String, mutable: Bool, value: Int32) throws {
         let target = GlobalSymbol.Synthesized(
             name: name, context: "_linker", type: .i32,
             mutable: mutable, value: value
         )
         let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-        _ = symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
+        _ = try symbolTable.addGlobalSymbol(.synthesized(target), flags: flags)
         debug("\(name) is synthesized")
     }
 
-    func synthesizeDataSymbols(dataSection: OutputDataSection) {
-        func addSynthesizedSymbol(name: String, address: Offset) {
+    func synthesizeDataSymbols(dataSection: OutputDataSection) throws {
+        func addSynthesizedSymbol(name: String, address: Offset) throws {
             let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-            _ = symbolTable.addDataSymbol(.synthesized(target), flags: flags)
+            _ = try symbolTable.addDataSymbol(.synthesized(target), flags: flags)
             debug("\(name) is synthesized")
         }
 
         for (segment, address) in dataSection.segments {
-            addSynthesizedSymbol(name: "__start_\(segment.name)", address: address)
-            addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address + segment.size)
+            try addSynthesizedSymbol(name: "__start_\(segment.name)", address: address)
+            try addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address + segment.size)
         }
-        addSynthesizedSymbol(name: "__dso_handle", address: 0)
+        try addSynthesizedSymbol(name: "__dso_handle", address: 0)
     }
 
-    func synthesizeStackPointer(dataSection: OutputDataSection) {
+    func synthesizeStackPointer(dataSection: OutputDataSection) throws {
         // Stack area is allocated **after** static data
         let stackAlignment = 16
         let stackStart = Int32(align(dataSection.initialMemorySize + PAGE_SIZE, to: stackAlignment))
-        addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: stackStart)
+        try addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: stackStart)
     }
 
-    func synthesizeFunctionSymbols() {
+    func synthesizeFunctionSymbols() throws {
         // Synthesize ctors caller
         let initFunctions = inputs.flatMap(\.initFunctions).sorted(by: {
             $0.priority < $1.priority
         })
         let target = FunctionSymbol.Synthesized.ctorsCaller(inits: initFunctions)
         let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-        _ = symbolTable.addFunctionSymbol(.synthesized(target), flags: flags)
+        _ = try symbolTable.addFunctionSymbol(.synthesized(target), flags: flags)
 
         // Synthesize weak undef func stubs
         for sym in symbolTable.symbols() {
@@ -147,7 +147,7 @@ class OutputWriter {
             else { continue }
             let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
             let synthesized = FunctionSymbol.Synthesized.weakUndefStub(target)
-            _ = symbolTable.addFunctionSymbol(.synthesized(synthesized), flags: flags)
+            _ = try symbolTable.addFunctionSymbol(.synthesized(synthesized), flags: flags)
             debug("weak undef stub for \(target.name) is synthesized")
         }
     }
