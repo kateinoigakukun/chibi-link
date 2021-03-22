@@ -1,26 +1,25 @@
 import ChibiLink
+import ArgumentParser
 
-var args = CommandLine.arguments
-var index = args.startIndex + 1
-var output: String?
-var inputs: [String] = []
-while index < args.count {
-    switch args[index] {
-    case "-o":
-        index += 1
-        output = args[index]
-    default:
-        inputs.append(args[index])
+struct ChibiLinkCLI: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "chibi-link",
+        abstract: "A linker for WebAssembly object files."
+    )
+    
+    @Argument(help: "Input files.")
+    var filenames: [String]
+    
+    @Option(name: .shortAndLong, help: "Output file.")
+    var output: String
+    
+    @Option(name: .shortAndLong, help: "Export symbols.")
+    var export: [String] = []
+    
+    func run() throws {
+        let outputStream = try FileOutputByteStream(path: output)
+        try performLinker(filenames, outputStream: outputStream, exports: export)
     }
-    index += 1
 }
 
-guard let output = output else {
-    fatalError("no output file specified")
-}
-do {
-    let outputStream = try FileOutputByteStream(path: output)
-    try performLinker(inputs, outputStream: outputStream)
-} catch {
-    fatalError("\(dump(error))")
-}
+ChibiLinkCLI.main()
