@@ -1,6 +1,8 @@
 name: Build and run tests
 on:
-  push: {}
+  push:
+    branch: main
+  pull_request: {}
 jobs:
   run:
     runs-on: macOS-latest
