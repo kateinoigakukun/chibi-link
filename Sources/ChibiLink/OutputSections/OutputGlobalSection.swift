@@ -38,7 +38,7 @@ class OutputGlobalSection: OutputVectorSection {
             try writer.writeI32InitExpr(.i32(global.value))
         }
         for section in sections {
-            let body = relocator.relocate(chunk: section)
+            let body = try relocator.relocate(chunk: section)
             let payload = body[
                 (section.sectionStart + section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)

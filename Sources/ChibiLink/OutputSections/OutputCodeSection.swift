@@ -24,7 +24,7 @@ class OutputCodeSection: OutputVectorSection {
             try synthesizedFunc.writeCode(writer: writer, relocator: relocator)
         }
         for section in sections {
-            let body = relocator.relocate(chunk: section)
+            let body = try relocator.relocate(chunk: section)
             let payload = body[
                 (section.sectionStart + section.content.payloadOffset - section.offset)...]
             try writer.writeBytes(payload)

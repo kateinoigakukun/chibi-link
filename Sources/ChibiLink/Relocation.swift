@@ -54,6 +54,11 @@ extension InputSection: RelocatableChunk {
 }
 
 class Relocator {
+    enum Error: Swift.Error {
+        case weakUndefinedSymbol
+        case unhandledRelocationType(RelocType)
+    }
+    
     let symbolTable: SymbolTable
     let typeSection: OutputTypeSection
     let importSection: OutputImportSeciton
@@ -77,8 +82,8 @@ class Relocator {
         self.globalSection = globalSection
     }
 
-    func relocate<T>(chunk: T) -> ArraySlice<UInt8> where T: RelocatableChunk {
-        relocate(
+    func relocate<T>(chunk: T) throws -> ArraySlice<UInt8> where T: RelocatableChunk {
+        try relocate(
             chunk: &chunk.parentBinary.data,
             relocations: chunk.relocations,
             binary: chunk.parentBinary, in: chunk.relocationRange,
@@ -90,9 +95,9 @@ class Relocator {
     func relocate(
         chunk: inout [UInt8], relocations: [Relocation], binary: InputBinary,
         in range: Range<Int>, sectionOffset: Int
-    ) {
+    ) throws {
         for reloc in relocations {
-            apply(
+            try apply(
                 relocation: reloc, sectionOffset: sectionOffset,
                 binary: binary, bytes: &chunk, in: range)
         }
@@ -122,7 +127,7 @@ class Relocator {
         return base + offset
     }
 
-    func translate(relocation: Relocation, binary: InputBinary, current: Int, location: Offset) -> UInt64 {
+    func translate(relocation: Relocation, binary: InputBinary, current: Int, location: Offset) throws -> UInt64 {
         var symbol: Symbol?
         if relocation.type != .TYPE_INDEX_LEB {
             symbol = binary.symbols[relocation.symbolIndex]
@@ -143,7 +148,7 @@ class Relocator {
             .MEMORY_ADDR_I32,
             .MEMORY_ADDR_I64:
             guard case let .data(dataSym) = symbol else {
-                fatalError()
+                throw Symbol.Error.unexpectedType(symbol: symbol, expectedType: .data)
             }
             switch dataSym.target {
             case let .defined(target):
@@ -153,13 +158,13 @@ class Relocator {
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:
-                undefinedSymbol(dataSym)
+                throw Symbol.UndefinedError(symbol: dataSym)
             case let .synthesized(target):
                 return UInt64(target.address)
             }
         case .MEMORY_ADDR_SELFREL_I32:
             guard case let .data(dataSym) = symbol else {
-                fatalError()
+                throw Symbol.Error.unexpectedType(symbol: symbol, expectedType: .data)
             }
             switch dataSym.target {
             case let .defined(target):
@@ -169,7 +174,7 @@ class Relocator {
             case .undefined where dataSym.flags.isWeak:
                 return 0
             case .undefined:
-                undefinedSymbol(dataSym)
+                throw Symbol.UndefinedError(symbol: dataSym)
             case let .synthesized(target):
                 return UInt64(target.address)
             }
@@ -178,15 +183,13 @@ class Relocator {
             return UInt64(typeSection.indexOffset(for: binary)! + relocation.symbolIndex)
         case .FUNCTION_INDEX_LEB:
             guard case let .function(funcSym) = symbol else {
-                fatalError()
+                throw Symbol.Error.unexpectedType(symbol: symbol, expectedType: .function)
             }
             switch funcSym.target {
             case let .defined(target):
                 return UInt64(functionIndex(for: target))
             case .undefined where funcSym.flags.isWeak:
-                fatalError(
-                    "unreachable: weak undef symbols should be replaced with synthesized stub function"
-                )
+                throw Error.weakUndefinedSymbol
             case let .undefined(funcImport):
                 return UInt64(importSection.importIndex(for: funcImport)!)
             case let .synthesized(target):
@@ -195,7 +198,7 @@ class Relocator {
             }
         case .GLOBAL_INDEX_LEB, .GLOBAL_INDEX_I32:
             guard case let .global(globalSym) = symbol else {
-                fatalError()
+                throw Symbol.Error.unexpectedType(symbol: symbol, expectedType: .global)
             }
             switch globalSym.target {
             case let .defined(target):
@@ -210,20 +213,20 @@ class Relocator {
             guard case let .function(funcSym) = symbol,
                 case .defined = funcSym.target
             else {
-                fatalError()
+                throw Symbol.Error.unexpectedType(symbol: symbol, expectedType: .function)
             }
         // TODO: Need to parse each function code to derive code offset
         case .SECTION_OFFSET_I32:
             // TODO: Support section symbol
             break
         }
-        fatalError()
+        throw Error.unhandledRelocationType(relocation.type)
     }
 
     func apply(
         relocation: Relocation, sectionOffset: Offset, binary: InputBinary,
         bytes: inout [UInt8], in range: Range<Int>
-    ) {
+    ) throws {
         let location = sectionOffset + relocation.offset
         let currentValue: Int
         switch relocation.type.outputType {
@@ -241,7 +244,7 @@ class Relocator {
             currentValue = Int(decodeLittleEndian(bytes[location...], UInt64.self))
         }
 
-        let value = translate(relocation: relocation, binary: binary, current: currentValue, location: location)
+        let value = try translate(relocation: relocation, binary: binary, current: currentValue, location: location)
         func writeByte(offset: Int, value: UInt8) {
             bytes[location + offset] = value
         }
@@ -326,8 +329,4 @@ where T: FixedWidthInteger {
         value += numericCast(byte) << shift
     }
     return value
-}
-
-fileprivate func undefinedSymbol<S: SymbolProtocol>(_ symbol: S) {
-    fatalError("error undefined symbol: \(symbol.target.name)")
 }

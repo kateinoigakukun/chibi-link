@@ -1,4 +1,8 @@
 class OutputExportSection: OutputVectorSection {
+    enum Error: Swift.Error {
+        case functionNotFound(String)
+    }
+    
     struct Export {
         let kind: Kind
         let name: String
@@ -23,7 +27,7 @@ class OutputExportSection: OutputVectorSection {
         exportSymbols: [String],
         funcSection: OutputFunctionSection,
         globalSection: OutputGlobalSection
-    ) {
+    ) throws {
         var exports: [String: Export] = [:]
         func exportFunction(_ target: IndexableTarget) {
             let base = funcSection.indexOffset(for: target.binary)!
@@ -43,7 +47,7 @@ class OutputExportSection: OutputVectorSection {
             guard case let .function(symbol) = symbolTable.find(export),
                 case let .defined(target) = symbol.target
             else {
-                fatalError("Error: Export function '\(export)' not found")
+                throw Error.functionNotFound(export)
             }
             exportFunction(target)
         }

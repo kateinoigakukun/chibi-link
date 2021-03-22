@@ -117,7 +117,7 @@ class OutputDataSection: OutputVectorSection {
             try writer.writeDataSegment(
                 segment, startOffset: offset
             ) { chunk in
-                return relocator.relocate(chunk: chunk)
+                try relocator.relocate(chunk: chunk)
             }
         }
     }
