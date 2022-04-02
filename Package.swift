@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "ChibiLink", targets: ["ChibiLink"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "0.4.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.1.0"),
     ],
     targets: [
         .target(
