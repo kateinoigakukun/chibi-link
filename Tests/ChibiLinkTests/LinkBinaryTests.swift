@@ -48,7 +48,8 @@ class InputBinaryTests: XCTestCase {
 
               (global i32 (i32.const 1))
 
-              (table anyfunc (elem 0))
+              (table $t 2 funcref)
+              (elem $t (i32.const 1))
 
               (memory (data "hello"))
               (func (result i32)
@@ -61,7 +62,8 @@ class InputBinaryTests: XCTestCase {
             .type, .import, .function, .global, .table, .elem, .memory, .data, .code,
         ]
         let actualSections1 = Set(binary1.sections.map(\.sectionCode))
-        XCTAssertEqual(actualSections1, expectedSections1)
+        XCTAssertEqual(actualSections1, expectedSections1,
+                       "+\(actualSections1.subtracting(expectedSections1)), -\(expectedSections1.subtracting(actualSections1))")
         XCTAssertEqual(binary1.functionCount, 1)
         XCTAssertEqual(binary1.funcImports.count, 1)
         let firstImport = try XCTUnwrap(binary1.funcImports.first)

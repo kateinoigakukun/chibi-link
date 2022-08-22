@@ -128,10 +128,11 @@ class BinaryReaderTests: XCTestCase {
 
               (global i32 (i32.const 1))
 
-              (table anyfunc (elem 0))
+              (table $t 2 funcref)
+              (elem $t (i32.const 0) $f)
 
               (memory (data "hello"))
-              (func (result i32)
+              (func $f (result i32)
                 (i32.add (call 0) (i32.load8_s (i32.const 1)))))
 
             """

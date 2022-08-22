@@ -27,7 +27,7 @@ func testSections(_ contents: [String: Input]) throws -> [SectionCode: OutputSec
     )
     let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
     let codeSection = OutputCodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
-    let memorySection = OutputMemorySection(dataSection: dataSection)
+    let memorySection = OutputMemorySection(heapStart: Int32(dataSection.initialMemorySize + PAGE_SIZE))
     let elemSection = OutputElementSection(
         sections: sectionsMap[.elem] ?? [], funcSection: funcSection
     )
