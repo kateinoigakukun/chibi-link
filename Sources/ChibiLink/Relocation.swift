@@ -1,3 +1,4 @@
+import Foundation
 protocol RelocatableChunk {
     var sectionStart: Offset { get }
     var relocations: [Relocation] { get }
@@ -101,6 +102,8 @@ class Relocator {
                 try apply(
                     relocation: reloc, sectionOffset: sectionOffset,
                     binary: binary, bytes: &chunk, in: range)
+            } catch let error as LocalizedError {
+                warning(error.errorDescription ?? String(describing: error))
             } catch {
                 warning(String(describing: error))
             }
