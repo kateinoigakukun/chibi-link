@@ -15,6 +15,12 @@ protocol BinaryReaderDelegate {
         _ type: ValueType, _ mutable: Bool
     )
 
+    func onImportTable(
+        _ importIndex: Index,
+        _ module: String, _ field: String,
+        _ tableIndex: Index
+    )
+
     func onFunctionCount(_ count: Int)
 
     func onMemory(_ memoryIndex: Index, _ pageLimits: Limits)
@@ -43,6 +49,8 @@ protocol BinaryReaderDelegate {
         _ index: Index, _ flags: UInt32, _ name: String,
         _ content: (segmentIndex: Index, offset: Offset, size: Size)?
     ) throws
+    func onTableSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) throws
+    func onUnknownSymbol(_ index: Index, _ flags: UInt32) throws
     func onSegmentInfo(
         _ index: Index, _ name: String,
         _ alignment: Int, _ flags: UInt32)
@@ -264,7 +272,11 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 funcImportCount += 1
             case .table:
                 _ = try readTable()
-                // onImportTable
+                delegate.onImportTable(
+                    importIdx,
+                    module, field,
+                    tableImportCount
+                )
                 tableImportCount += 1
             case .memory:
                 _ = try readMemory()
@@ -472,8 +484,8 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                     try delegate.onFunctionSymbol(i, symFlags, name, itemIndex)
                 case .global:
                     try delegate.onGlobalSymbol(i, symFlags, name, itemIndex)
-                case .event, .table:
-                    break // TODO: Support event and table relocations
+                case .table:
+                    try delegate.onTableSymbol(i, symFlags, name, itemIndex)
                 default:
                     throw Error.invalidSymbolType(symType.rawValue)
                 }
@@ -489,8 +501,8 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 }
                 try delegate.onDataSymbol(i, symFlags, name, content)
             case .section:
-                assert(binding == SYMBOL_BINDING_LOCAL)
                 _ = readU32Leb128()  // section index
+                try delegate.onUnknownSymbol(i, symFlags)
             }
         }
     }

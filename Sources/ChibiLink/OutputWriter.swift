@@ -31,7 +31,8 @@ class OutputWriter {
         let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
 
         try synthesizeDataSymbols(dataSection: dataSection)
-        try synthesizeStackPointer(dataSection: dataSection)
+        let stackStart = try synthesizeStackPointer(dataSection: dataSection)
+        try synthesizeHeapBase(stackStart: stackStart)
 
         let importSection = OutputImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = OutputFunctionSection(
@@ -108,26 +109,36 @@ class OutputWriter {
         debug("\(name) is synthesized")
     }
 
-    func synthesizeDataSymbols(dataSection: OutputDataSection) throws {
-        func addSynthesizedSymbol(name: String, address: Offset) throws {
-            let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
-            let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
-            _ = try symbolTable.addDataSymbol(.synthesized(target), flags: flags)
-            debug("\(name) is synthesized")
-        }
-
-        for (segment, address) in dataSection.segments {
-            try addSynthesizedSymbol(name: "__start_\(segment.name)", address: address)
-            try addSynthesizedSymbol(name: "__stop_\(segment.name)", address: address + segment.size)
-        }
-        try addSynthesizedSymbol(name: "__dso_handle", address: 0)
+    func addSynthesizedDataSymbol(name: String, address: Offset) throws {
+        let target = DataSymbol.Synthesized(name: name, context: "_linker", address: address)
+        let flags = SymbolFlags(rawValue: SYMBOL_VISIBILITY_HIDDEN)
+        _ = try symbolTable.addDataSymbol(.synthesized(target), flags: flags)
+        debug("\(name) is synthesized")
     }
 
-    func synthesizeStackPointer(dataSection: OutputDataSection) throws {
+    func synthesizeDataSymbols(dataSection: OutputDataSection) throws {
+
+        for (segment, address) in dataSection.segments {
+            try addSynthesizedDataSymbol(name: "__start_\(segment.name)", address: address)
+            try addSynthesizedDataSymbol(name: "__stop_\(segment.name)", address: address + segment.size)
+        }
+        try addSynthesizedDataSymbol(name: "__dso_handle", address: 0)
+    }
+
+    func synthesizeStackPointer(dataSection: OutputDataSection) throws -> Int32 {
         // Stack area is allocated **after** static data
         let stackAlignment = 16
         let stackStart = Int32(align(dataSection.initialMemorySize + PAGE_SIZE, to: stackAlignment))
         try addSynthesizedSymbol(name: "__stack_pointer", mutable: true, value: stackStart)
+        return stackStart
+    }
+
+    func synthesizeHeapBase(stackStart: Int32) throws {
+        // stackStart means the largest address in stack space
+        // Heap space is allocated **after** stack space
+        let stackAlignment = 16
+        let heapBase = align(Int(stackStart), to: stackAlignment)
+        try addSynthesizedDataSymbol(name: "__heap_base", address: heapBase)
     }
 
     func synthesizeFunctionSymbols() throws {

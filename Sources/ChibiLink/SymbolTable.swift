@@ -34,6 +34,19 @@ extension GlobalImport: UndefinedTarget {
     var name: String { field }
 }
 
+extension TableImport: UndefinedTarget {
+    var name: String { field }
+}
+
+extension Never: UndefinedTarget {
+    var name: String {
+        switch self {}
+    }
+    var module: String {
+        switch self {}
+    }
+}
+
 protocol SynthesizedTarget: DefinedTarget {}
 
 enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget, Synthesized: SynthesizedTarget> {
@@ -47,6 +60,12 @@ enum SymbolTarget<Target: DefinedTarget, Import: UndefinedTarget, Synthesized: S
         case let .undefined(target): return target.name
         case let .synthesized(target): return target.name
         }
+    }
+}
+
+extension Never: SynthesizedTarget {
+    var context: String {
+        switch self {}
     }
 }
 
@@ -193,6 +212,23 @@ final class DataSymbol: SymbolProtocol {
     }
 }
 
+final class TableSymbol: SymbolProtocol {
+    typealias Defined = IndexableTarget
+    typealias Import = TableImport
+    struct Synthesized: SynthesizedTarget {
+        let name: String
+        let context: String
+    }
+
+    fileprivate(set) var target: Target
+    let flags: SymbolFlags
+
+    init(target: Target, flags: SymbolFlags) {
+        self.target = target
+        self.flags = flags
+    }
+}
+
 enum Symbol {
     enum Error: Swift.Error {
         case conflict(name: String, oldContext: String, newContext: String)
@@ -208,6 +244,7 @@ enum Symbol {
     case function(FunctionSymbol)
     case global(GlobalSymbol)
     case data(DataSymbol)
+    case table(TableSymbol)
 
     var name: String {
         switch self {
@@ -216,6 +253,8 @@ enum Symbol {
         case let .data(symbol):
             return symbol.target.name
         case let .global(symbol):
+            return symbol.target.name
+        case let .table(symbol):
             return symbol.target.name
         }
     }
@@ -253,6 +292,8 @@ enum Symbol {
             return isUndef(symbol.target)
         case let .global(symbol):
             return isUndef(symbol.target)
+        case let .table(symbol):
+            return isUndef(symbol.target)
         }
     }
 
@@ -264,6 +305,8 @@ enum Symbol {
             return symbol.flags
         case let .global(symbol):
             return symbol.flags
+        case let .table(symbol):
+            return symbol.flags
         }
     }
 }
@@ -274,9 +317,11 @@ class SymbolTable {
     private var synthesizedGlobalIndexMap: [String: Index] = [:]
     private var synthesizedFunctionIndexMap: [String: Index] = [:]
     private var synthesizedDataIndexMap: [String: Index] = [:]
+    private var synthesizedTableIndexMap: [String: Index] = [:]
     private var _synthesizedGlobals: [GlobalSymbol.Synthesized] = []
     private var _synthesizedFunctions: [FunctionSymbol.Synthesized] = []
     private var _synthesizedData: [DataSymbol.Synthesized] = []
+    private var _synthesizedTables: [TableSymbol.Synthesized] = []
 
     func symbols() -> [Symbol] {
         Array(symbolMap.values)
@@ -378,6 +423,50 @@ class SymbolTable {
             (.defined, .synthesized) where flags.isWeak,
             (.synthesized, .defined) where flags.isWeak:
             return existingGlobal
+        case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+            let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
+            let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),
+            let (.synthesized(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)):
+            throw Symbol.Error.conflict(
+                name: existing.name,
+                oldContext: existing.context,
+                newContext: newTarget.context
+            )
+        }
+    }
+
+    func addTableSymbol(
+        _ target: TableSymbol.Target,
+        flags: SymbolFlags
+    ) throws -> TableSymbol {
+        let targetName: StringHash = target.name.hashValue
+        func indexSynthesizedTable() {
+            guard case let .synthesized(target) = target else { return }
+            synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
+            _synthesizedTables.append(target)
+        }
+        guard let existing = symbolMap[targetName] else {
+            let newSymbol = TableSymbol(target: target, flags: flags)
+            symbolMap[targetName] = .table(newSymbol)
+            indexSynthesizedTable()
+            return newSymbol
+        }
+
+        guard case let .table(existingTable) = existing else {
+            throw Symbol.Error.unexpectedType(symbol: existing, expectedType: .global)
+        }
+        switch (existingTable.target, target) {
+        case (.undefined, .defined), (.undefined, .synthesized):
+            existingTable.target = target
+            indexSynthesizedTable()
+            return existingTable
+        case (.undefined, .undefined), (.defined, .undefined),
+            (.synthesized, .undefined),
+            (.defined, .defined) where flags.isWeak,
+            (.synthesized, .synthesized) where flags.isWeak,
+            (.defined, .synthesized) where flags.isWeak,
+            (.synthesized, .defined) where flags.isWeak:
+            return existingTable
         case let (.defined(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
             let (.synthesized(existing as DefinedTarget), .defined(newTarget as DefinedTarget)),
             let (.defined(existing as DefinedTarget), .synthesized(newTarget as DefinedTarget)),

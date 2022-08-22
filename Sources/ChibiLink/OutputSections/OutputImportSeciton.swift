@@ -58,7 +58,7 @@ struct OutputImportSeciton: OutputVectorSection {
             switch symbol {
             case let .function(symbol): addImport(symbol)
             case let .global(symbol): addImport(symbol)
-            case .data:
+            case .data, .table:
                 // We don't generate imports for data symbols.
                 continue
             }

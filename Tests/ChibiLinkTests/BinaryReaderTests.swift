@@ -14,6 +14,7 @@ class NopDelegate: BinaryReaderDelegate {
     func onFunctionCount(_: Int) {}
     func onImportFunc(_: Int, _: String, _: String, _: Int, _: Int) {}
     func onImportGlobal(_: Int, _: String, _: String, _: Int, _: ValueType, _: Bool) {}
+    func onImportTable(_ importIndex: Index, _ module: String, _ field: String, _ tableIndex: Index) {}
     func onMemory(_: Int, _: Limits) {}
     func onExport(_: Int, _: ExternalKind, _: Int, _: String) {}
     func onElementSegmentFunctionIndexCount(_: Int, _: Int) {}
@@ -29,6 +30,8 @@ class NopDelegate: BinaryReaderDelegate {
     func onDataSymbol(
         _: Index, _: UInt32, _: String, _: (segmentIndex: Index, offset: Offset, size: Size)?
     ) {}
+    func onTableSymbol(_ index: Index, _ flags: UInt32, _ name: String?, _ itemIndex: Index) {}
+    func onUnknownSymbol(_ index: Index, _ flags: UInt32) {}
 
     func onSegmentInfo(_: Index, _: String, _: Int, _: UInt32) {}
     func onInitFunction(_ initSymbol: Index, _ priority: UInt32) {}

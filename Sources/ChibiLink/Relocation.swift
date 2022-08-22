@@ -97,9 +97,13 @@ class Relocator {
         in range: Range<Int>, sectionOffset: Int
     ) throws {
         for reloc in relocations {
-            try apply(
-                relocation: reloc, sectionOffset: sectionOffset,
-                binary: binary, bytes: &chunk, in: range)
+            do {
+                try apply(
+                    relocation: reloc, sectionOffset: sectionOffset,
+                    binary: binary, bytes: &chunk, in: range)
+            } catch {
+                warning(String(describing: error))
+            }
         }
     }
 

@@ -70,6 +70,11 @@ class LinkInfoCollector: BinaryReaderDelegate {
         binary.globalImports.append(globalImport)
     }
 
+    func onImportTable(_: Index, _ module: String, _ field: String, _: Index) {
+        let tableImport = TableImport(module: module, field: field)
+        binary.tableImports.append(tableImport)
+    }
+
     func onFunctionCount(_ count: Int) {
         binary.functionCount = count
     }
@@ -185,6 +190,27 @@ class LinkInfoCollector: BinaryReaderDelegate {
             symbol = try symbolTable.addDataSymbol(target, flags: flags)
         }
         binary.symbols.append(.data(symbol))
+    }
+
+    func onTableSymbol(_: Index, _ rawFlags: UInt32, _ name: String?, _ itemIndex: Index) throws {
+        let target: TableSymbol.Target
+        let flags = SymbolFlags(rawValue: rawFlags)
+        if let name = name, !flags.isUndefined {
+            target = .defined(IndexableTarget(itemIndex: itemIndex, name: name, binary: binary))
+        } else {
+            target = .undefined(binary.tableImports[itemIndex])
+        }
+        let symbol: TableSymbol
+        if flags.isLocal {
+            symbol = TableSymbol(target: target, flags: flags)
+        } else {
+            symbol = try symbolTable.addTableSymbol(target, flags: flags)
+        }
+        binary.symbols.append(.table(symbol))
+    }
+
+    func onUnknownSymbol(_ index: Index, _ flags: UInt32) throws {
+        binary.symbols.append(nil)
     }
 
     func onSegmentInfo(_ index: Index, _ name: String, _ alignment: Int, _ flags: UInt32) {

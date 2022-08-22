@@ -26,6 +26,16 @@ class GlobalImport {
     let mutable: Bool
 }
 
+class TableImport {
+    internal init(module: String, field: String) {
+        self.module = module
+        self.field = field
+    }
+
+    let module: String
+    let field: String
+}
+
 class Export {
     let kind: ExternalKind
     let name: String
@@ -53,10 +63,11 @@ class InputBinary {
     var sections: [InputSection] = []
     var funcImports: [FunctionImport] = []
     var globalImports: [GlobalImport] = []
+    var tableImports: [TableImport] = []
     var exports: [Index: Export] = [:]
     var functionCount: Int!
     var debugNames: [String] = []
-    var symbols: [Symbol] = []
+    var symbols: [Symbol?] = []
     var initFunctions: [InitFunction] = []
 
     init(id: ID, filename: String, data: [UInt8]) {
