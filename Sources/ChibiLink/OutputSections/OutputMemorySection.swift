@@ -4,10 +4,8 @@ class OutputMemorySection: OutputVectorSection {
     var count: Int { 1 }
     let pagesCount: Int
 
-    init(dataSection: OutputDataSection) {
-        // static data size + stack area size
-        let size = dataSection.initialMemorySize + PAGE_SIZE
-        pagesCount = align(size, to: PAGE_SIZE) / PAGE_SIZE
+    init(heapStart: Int32) {
+        pagesCount = align(Int(heapStart), to: PAGE_SIZE) / PAGE_SIZE
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator _: Relocator) throws {

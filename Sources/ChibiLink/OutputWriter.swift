@@ -32,7 +32,7 @@ class OutputWriter {
 
         try synthesizeDataSymbols(dataSection: dataSection)
         let stackStart = try synthesizeStackPointer(dataSection: dataSection)
-        try synthesizeHeapBase(stackStart: stackStart)
+        let heapStart = try synthesizeHeapBase(stackStart: stackStart)
 
         let importSection = OutputImportSeciton(symbolTable: symbolTable, typeSection: typeSection)
         let funcSection = OutputFunctionSection(
@@ -51,7 +51,7 @@ class OutputWriter {
         )
         let codeSection = OutputCodeSection(
             sections: sectionsMap[.code] ?? [], symbolTable: symbolTable)
-        let memorySection = OutputMemorySection(dataSection: dataSection)
+        let memorySection = OutputMemorySection(heapStart: heapStart)
         let elemSection = OutputElementSection(
             sections: sectionsMap[.elem] ?? [], funcSection: funcSection
         )
@@ -133,12 +133,13 @@ class OutputWriter {
         return stackStart
     }
 
-    func synthesizeHeapBase(stackStart: Int32) throws {
+    func synthesizeHeapBase(stackStart: Int32) throws -> Int32 {
         // stackStart means the largest address in stack space
         // Heap space is allocated **after** stack space
-        let stackAlignment = 16
-        let heapBase = align(Int(stackStart), to: stackAlignment)
+        let heapAlignment = 16
+        let heapBase = align(Int(stackStart), to: heapAlignment)
         try addSynthesizedDataSymbol(name: "__heap_base", address: heapBase)
+        return Int32(heapBase)
     }
 
     func synthesizeFunctionSymbols() throws {
