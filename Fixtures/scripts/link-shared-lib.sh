@@ -11,13 +11,14 @@ cd $workdir
 
 link-shared-object-library() {
   local inputs=(
-    "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/crt1-reactor.o"
+    "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/crt1-command.o"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/wasm32/swiftrt.o"
     "$SWIFT_TOOLCHAIN/lib/clang/13.0.0/lib/wasi/libclang_rt.builtins-wasm32.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftWasiPthread.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftCore.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswift_Concurrency.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftSwiftOnoneSupport.a"
+    "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libswiftWASILibc.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libFoundation.a"
     "$SWIFT_TOOLCHAIN/lib/swift_static/wasi/libBlocksRuntime.a"
     "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/libc.a"
@@ -29,6 +30,9 @@ link-shared-object-library() {
     "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/libwasi-emulated-mman.a"
     "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/libwasi-emulated-signal.a"
     "$SWIFT_TOOLCHAIN/share/wasi-sysroot/lib/wasm32-wasi/libwasi-emulated-process-clocks.a"
+  )
+  local excludes=(
+    "ImageInspectionCOFF.cpp.o"
   )
   local workdir=$(mktemp -d)
   local linkfile="$workdir/LinkInputs.filelist"
@@ -42,9 +46,10 @@ link-shared-object-library() {
       mkdir -p $obj_dir
       pushd $obj_dir > /dev/null
       "$SWIFT_TOOLCHAIN/bin/llvm-ar" x $obj
-      if [[ -f $obj_dir/ImageInspectionCOFF.cpp.o ]]; then
-        rm $obj_dir/ImageInspectionCOFF.cpp.o
-      fi
+
+      for exobj in ${excludes[@]}; do
+        rm -f $obj_dir/$exobj
+      done
       popd > /dev/null
       echo $obj_dir/* >> $linkfile
     fi

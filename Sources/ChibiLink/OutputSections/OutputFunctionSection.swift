@@ -5,6 +5,7 @@ class OutputFunctionSection: OutputVectorSection {
     private let sections: [InputVectorSection]
     private let typeSection: OutputTypeSection
     private let indexOffsetByFileID: [InputBinary.ID: Offset]
+    private let importSection: OutputImportSeciton
 
     init(
         sections: [InputSection],
@@ -19,18 +20,29 @@ class OutputFunctionSection: OutputVectorSection {
             guard case let .rawVector(code, section) = section,
                 code == .function
             else { preconditionFailure() }
-            indexOffsets[section.binary.id] = totalCount + importSection.functionCount
+            indexOffsets[section.binary.id] = importSection.functionCount + totalCount
             totalCount += section.content.count
             vectorSections.append(section)
         }
         count = totalCount
         self.sections = vectorSections
         self.typeSection = typeSection
+        self.importSection = importSection
         indexOffsetByFileID = indexOffsets
     }
 
     func indexOffset(for binary: InputBinary) -> Offset? {
         return indexOffsetByFileID[binary.id]
+    }
+
+    func indexOffset(fromIndex objectIndex: Index, binary: InputBinary) -> Offset {
+        if objectIndex < binary.funcImports.count {
+            let funcImport = binary.funcImports[objectIndex]
+            // If not found in the final import section, the import entry is stub or undef
+            return importSection.importIndex(for: funcImport) ?? 0
+        } else {
+            return indexOffsetByFileID[binary.id]! + objectIndex - binary.funcImports.count
+        }
     }
 
     func writeVectorContent(writer: BinaryWriter, relocator: Relocator) throws {
