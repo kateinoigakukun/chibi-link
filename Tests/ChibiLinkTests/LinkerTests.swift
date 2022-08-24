@@ -17,7 +17,7 @@ func testLink(_ contents: [String: Input]) throws -> [UInt8] {
     }
     let stream = InMemoryOutputByteStream()
     let writer = OutputWriter(stream: stream, symbolTable: symtab, inputs: inputs)
-    try writer.writeBinary()
+    try writer.writeBinary(globalBase: 1024)
     return stream.bytes
 }
 

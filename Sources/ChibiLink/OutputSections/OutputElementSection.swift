@@ -35,14 +35,14 @@ class OutputElementSection: OutputVectorSection {
         // Read + Write + Relocate func indexes
         for section in sections {
             let binary = section.binary
-            let offsetBase = funcSection.indexOffset(for: binary)! - binary.funcImports.count
             for segment in section.content.elements {
                 var readOffset = segment.offset
                 for _ in 0..<segment.elementCount {
                     let payload = section.binary.data[readOffset...]
                     let (funcIndex, length) = decodeULEB128(payload, UInt32.self)
                     readOffset += length
-                    try writer.writeIndex(Index(funcIndex) + offsetBase)
+                    let idx = funcSection.indexOffset(fromIndex: Index(funcIndex), binary: binary)
+                    try writer.writeIndex(idx)
                 }
             }
         }

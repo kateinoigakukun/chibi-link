@@ -25,9 +25,9 @@ func testSections(_ contents: [String: Input]) throws -> [SectionCode: OutputSec
         sections: sectionsMap[.function] ?? [],
         typeSection: typeSection, importSection: importSection, symbolTable: symtab
     )
-    let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
+    let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [], globalBase: 0)
     let codeSection = OutputCodeSection(sections: sectionsMap[.code] ?? [], symbolTable: symtab)
-    let memorySection = OutputMemorySection(dataSection: dataSection)
+    let memorySection = OutputMemorySection(heapStart: Int32(dataSection.initialMemorySize + PAGE_SIZE))
     let elemSection = OutputElementSection(
         sections: sectionsMap[.elem] ?? [], funcSection: funcSection
     )

@@ -55,7 +55,7 @@ class OutputDataSection: OutputVectorSection {
         return outputOffsetByInputSegment[key]
     }
 
-    init(sections: [InputSection]) {
+    init(sections: [InputSection], globalBase: Offset) {
         var segmentMap: [String: OutputSegment] = [:]
         for section in sections {
             guard case let .data(section) = section else { preconditionFailure() }
@@ -93,7 +93,7 @@ class OutputDataSection: OutputVectorSection {
         count = segmentMap.count
         let segmentList = Array(segmentMap.values.sorted(by: { $0.name > $1.name }))
         var segments: [LocatedSegment] = []
-        var memoryOffset: Offset = 0
+        var memoryOffset: Offset = globalBase
         var outputOffsetByInputSegName: [OffsetKey: Offset] = [:]
         for segment in segmentList {
             memoryOffset = align(memoryOffset, to: segment.alignment)

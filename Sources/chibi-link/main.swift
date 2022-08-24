@@ -15,10 +15,13 @@ struct ChibiLinkCLI: ParsableCommand {
     
     @Option(name: .shortAndLong, help: "Export symbols.")
     var export: [String] = []
-    
+
+    @Option(name: .long, help: "Where to start to place global data")
+    var globalBase: Int = 1024
+
     func run() throws {
         let outputStream = try FileOutputByteStream(path: output)
-        try performLinker(filenames, outputStream: outputStream, exports: export)
+        try performLinker(filenames, outputStream: outputStream, exports: export, globalBase: globalBase)
     }
 }
 

@@ -312,8 +312,7 @@ enum Symbol {
 }
 
 class SymbolTable {
-    private typealias StringHash = Int
-    private var symbolMap: [StringHash: Symbol] = [:]
+    private var symbolMap: [String: Symbol] = [:]
     private var synthesizedGlobalIndexMap: [String: Index] = [:]
     private var synthesizedFunctionIndexMap: [String: Index] = [:]
     private var synthesizedDataIndexMap: [String: Index] = [:]
@@ -344,14 +343,14 @@ class SymbolTable {
     }
 
     func find(_ name: String) -> Symbol? {
-        return symbolMap[name.hashValue]
+        return symbolMap[name]
     }
 
     func addFunctionSymbol(
         _ target: FunctionSymbol.Target,
         flags: SymbolFlags
     ) throws -> FunctionSymbol {
-        let targetName: StringHash = target.name.hashValue
+        let targetName = target.name
         func indexSynthesizedFn() {
             guard case let .synthesized(target) = target else { return }
             synthesizedFunctionIndexMap[target.name] = _synthesizedFunctions.count
@@ -395,7 +394,7 @@ class SymbolTable {
         _ target: GlobalSymbol.Target,
         flags: SymbolFlags
     ) throws -> GlobalSymbol {
-        let targetName: StringHash = target.name.hashValue
+        let targetName = target.name
         func indexSynthesizedGlobal() {
             guard case let .synthesized(target) = target else { return }
             synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
@@ -439,7 +438,7 @@ class SymbolTable {
         _ target: TableSymbol.Target,
         flags: SymbolFlags
     ) throws -> TableSymbol {
-        let targetName: StringHash = target.name.hashValue
+        let targetName = target.name
         func indexSynthesizedTable() {
             guard case let .synthesized(target) = target else { return }
             synthesizedGlobalIndexMap[target.name] = _synthesizedGlobals.count
@@ -483,7 +482,7 @@ class SymbolTable {
         _ target: DataSymbol.Target,
         flags: SymbolFlags
     ) throws -> DataSymbol {
-        let targetName: StringHash = target.name.hashValue
+        let targetName = target.name
         func indexSynthesizedData() {
             guard case let .synthesized(target) = target else { return }
             synthesizedDataIndexMap[target.name] = _synthesizedData.count
