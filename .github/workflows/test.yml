@@ -1,16 +1,16 @@
 name: Build and run tests
 on:
   push:
-    branch: main
+    branches: [main]
   pull_request: {}
 jobs:
   run:
-    runs-on: macOS-latest
+    runs-on: macos-12
     name: Build and run tests
     steps:
     - uses: actions/checkout@master
     - name: Select latest Xcode
-      run: sudo xcode-select --switch /Applications/Xcode_12_beta.app/Contents/Developer/
+      run: sudo xcode-select --switch /Applications/Xcode_13.2.1.app/Contents/Developer/
     - name: Install tools
       run: |
         brew install llvm wabt
@@ -21,7 +21,7 @@ jobs:
         sudo cp wasmtime-dev-x86_64-macos/wasmtime /usr/local/bin/wasmtime
     - name: Download Toolchain
       run: |
-        VERSION=swift-wasm-5.3.1-RELEASE
+        VERSION=swift-wasm-5.6-SNAPSHOT-2022-06-30-a
         TOOLCHAIN_URL="https://github.com/swiftwasm/swift/releases/download/$VERSION/$VERSION-macos_x86_64.pkg"
         wget $TOOLCHAIN_URL
         installer -target CurrentUserHomeDirectory -pkg $VERSION-macos_x86_64.pkg
