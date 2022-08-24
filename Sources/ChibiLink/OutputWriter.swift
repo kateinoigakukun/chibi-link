@@ -15,7 +15,7 @@ class OutputWriter {
         self.exportSymbols = exportSymbols
     }
 
-    func writeBinary() throws {
+    func writeBinary(globalBase: Offset) throws {
         try writer.writeHeader()
 
         var sectionsMap: [SectionCode: [InputSection]] = [:]
@@ -28,7 +28,7 @@ class OutputWriter {
         let typeSection = OutputTypeSection(
             sections: sectionsMap[.type] ?? [], symbolTable: symbolTable
         )
-        let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [])
+        let dataSection = OutputDataSection(sections: sectionsMap[.data] ?? [], globalBase: globalBase)
 
         try synthesizeDataSymbols(dataSection: dataSection)
         let stackStart = try synthesizeStackPointer(dataSection: dataSection)

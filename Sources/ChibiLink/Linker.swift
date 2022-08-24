@@ -1,5 +1,6 @@
 public func performLinker(
-    _ filenames: [String], outputStream: OutputByteStream, exports: [String] = []
+    _ filenames: [String], outputStream: OutputByteStream, exports: [String] = [],
+    globalBase: Int = 1024
 ) throws {
     let symtab = SymbolTable()
     var inputs: [InputBinary] = []
@@ -13,5 +14,5 @@ public func performLinker(
     }
     let writer = OutputWriter(
         stream: outputStream, symbolTable: symtab, inputs: inputs, exportSymbols: exports)
-    try writer.writeBinary()
+    try writer.writeBinary(globalBase: globalBase)
 }
