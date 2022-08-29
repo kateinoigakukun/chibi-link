@@ -43,7 +43,7 @@ func readFileContents(_ filename: String) throws -> [UInt8] {
     while true {
         let n = fread(&tmpBuffer, 1, tmpBuffer.count, fd)
         if n < 0 {
-            if errno == EINTR { continue }
+            if errno == POSIXErrorCode.EINTR.rawValue { continue }
             throw FileSystemError.ioError
         }
         if n == 0 {

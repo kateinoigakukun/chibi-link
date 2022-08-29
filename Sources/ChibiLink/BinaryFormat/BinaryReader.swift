@@ -501,6 +501,9 @@ class BinaryReader<Delegate: BinaryReaderDelegate> {
                 }
                 try delegate.onDataSymbol(i, symFlags, name, content)
             case .section:
+                if binding != SYMBOL_BINDING_LOCAL {
+                    warning("\(binding) is expected to be SYMBOL_BINDING_LOCAL")
+                }
                 _ = readU32Leb128()  // section index
                 try delegate.onUnknownSymbol(i, symFlags)
             }
